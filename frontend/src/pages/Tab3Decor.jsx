@@ -110,32 +110,32 @@ export default function Tab3Decor() {
     setPredicting(true)
     setPrediction(null)
 
-    const formData = new FormData()
-    formData.append('file', uploadedFile)
-    formData.append('function_type', uploadTag.function_type)
-    formData.append('complexity', uploadTag.complexity)
-    formData.append('style', uploadTag.style)
-
     try {
-      setPredStep('Extracting image embeddings via MobileNetV2...')
-      const res = await fetch('http://localhost:5001/predict', {
+      setPredStep('Analysing decor attributes...')
+      const res = await fetch(`${API}/decor/predict`, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          function_type: uploadTag.function_type,
+          complexity:    uploadTag.complexity,
+          style:         uploadTag.style,
+          image_seed:    Math.floor(Math.random() * 1000)
+        })
       })
       if (!res.ok) throw new Error(`Server error ${res.status}`)
       const d = await res.json()
       if (d.error) throw new Error(d.error)
       setPrediction({
-        predicted_cost:    d.predicted_cost,
-        range:             [d.cost_low, d.cost_high],
-        confidence:        d.confidence,
-        similar_items:     (d.similar_items || []).map(s => ({
-          name:          s.function_type,
-          function_type: s.function_type,
-          base_cost:     s.base_cost,
+        predicted_cost: d.predicted_cost,
+        range:          d.range || [Math.round(d.predicted_cost * 0.8), Math.round(d.predicted_cost * 1.25)],
+        confidence:     d.confidence,
+        similar_items:  (d.similar_items || []).map(s => ({
+          name:           s.name || s.function_type,
+          function_type:  s.function_type,
+          base_cost:      s.base_cost,
           similarity_pct: s.similarity_pct
         })),
-        source: `ML Model · ${d.n_training_samples} samples · MAE ₹${Number(d.mae).toLocaleString('en-IN')}`
+        source: d.source || 'AI Estimate'
       })
     } catch (err) {
       // Offline fallback
