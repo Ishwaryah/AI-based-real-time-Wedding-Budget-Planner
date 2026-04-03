@@ -179,19 +179,13 @@ export default function Tab8Budget() {
   const calculateBudget = async () => {
     setLoading(true); setScenLoading(true)
     try {
-      const [budRes, scRes] = await Promise.all([
-        fetch(`${API}/budget/calculate`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data: wedding })
-        }),
-        fetch(`${API}/budget/scenarios`, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data: wedding })
-        }),
-      ])
-      const [budData, scData] = await Promise.all([budRes.json(), scRes.json()])
+      const budRes = await fetch(`${API}/budget/calculate`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ data: wedding })
+      })
+      const budData = await budRes.json()
       setBudget(budData)
-      setScenarios(scData)
+      setScenarios(null)  // scenarios disabled until backend endpoint exists
     } catch {
       // Offline fallback
       const total_guests = wedding.total_guests || 200
