@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeddingBudget.AI — Plan Your Wedding Brilliantly</title>
+  <meta name="description" content="The world's most intuitive AI budget tool for Indian weddings. Hindu, Muslim, Christian — we've got you covered." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ========== LANDING PAGE ========== -->
+  <div id="landing-page" class="page active">
+
+    <!-- Particle Canvas Background -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Floating Emoji Elements -->
+    <div class="floating-emojis" id="floating-emojis">
+      <span class="float-emoji" data-x="8" data-y="22" data-speed="0.3">💍</span>
+      <span class="float-emoji" data-x="85" data-y="12" data-speed="0.4">🌸</span>
+      <span class="float-emoji" data-x="6" data-y="42" data-speed="0.25">💐</span>
+      <span class="float-emoji" data-x="90" data-y="38" data-speed="0.35">🎊</span>
+      <span class="float-emoji" data-x="12" data-y="62" data-speed="0.2">✨</span>
+      <span class="float-emoji" data-x="88" data-y="58" data-speed="0.45">🍊</span>
+      <span class="float-emoji" data-x="5" data-y="78" data-speed="0.3">🎉</span>
+      <span class="float-emoji" data-x="92" data-y="75" data-speed="0.25">🕌</span>
+      <span class="float-emoji" data-x="15" data-y="88" data-speed="0.4">🪔</span>
+      <span class="float-emoji" data-x="80" data-y="88" data-speed="0.35">🎶</span>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header" id="header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">🌸</span>
+          <span class="logo-text">WeddingBudget<span class="logo-ai">.AI</span></span>
+        </div>
+        <nav class="nav" id="main-nav">
+          <a href="#" class="nav-link active" onclick="switchToPlanner('style'); return false;">🎨 Style</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('venue'); return false;">🏛️ Venue</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('decor'); return false;">💐 Decor AI</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('food'); return false;">🍽️ Food</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('artists'); return false;">🎤 Artists</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('sundries'); return false;">🎁 Sundries</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('logistics'); return false;">🚗 Logistics</a>
+          <a href="#" class="nav-link" onclick="switchToPlanner('budget'); return false;">💰 Budget</a>
+        </nav>
+        <div class="header-actions">
+          <a href="#" class="btn-ghost" id="admin-btn">Admin</a>
+          <button class="btn-primary" id="start-btn" onclick="showPlanner()">Start Planning</button>
+        </div>
+        <button class="hamburger" id="hamburger" onclick="toggleMobileNav()">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="badge-dot">✦</span> NEXT-GEN WEDDING PLANNING
+      </div>
+      <h1 class="hero-title">
+        Plan your wedding.<br/>
+        <span class="hero-highlight">Brilliantly.</span>
+      </h1>
+      <p class="hero-subtitle">
+        The world's most intuitive AI budget tool for Indian weddings.<br/>
+        Hindu, Muslim, Christian — we've got you covered.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-primary btn-large" id="hero-start-btn" onclick="showPlanner()">
+          Start Planning — It's Free →
+        </button>
+        <button class="btn-outline btn-large" onclick="scrollToFeatures()">
+          See how it works
+        </button>
+      </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="features" id="features">
+      <div class="features-label">HOW IT WORKS</div>
+      <h2 class="features-title">Everything you need to plan the <em>perfect</em> wedding</h2>
+      <div class="features-grid">
+        <div class="feature-card card-large">
+          <div class="feature-emoji">📅</div>
+          <h3>Set Your Date & Style</h3>
+          <p>Choose your wedding date, type, and cultural preferences. We tailor everything for Hindu, Muslim, Sikh, Christian, Jain, Buddhist & more.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-emoji">🏛️</div>
+          <h3>Find the Perfect Venue</h3>
+          <p>Browse curated venues with live pricing for your city and guest count.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-emoji">💐</div>
+          <h3>AI Decor Suggestions</h3>
+          <p>Get AI-powered decor recommendations with cost estimates.</p>
+        </div>
+        <div class="feature-card card-wide">
+          <div class="feature-emoji">💰</div>
+          <h3>Smart Budget Tracking</h3>
+          <p>Real-time budget breakdown across all categories. Never go over budget again.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-emoji">🎤</div>
+          <h3>Artists & Entertainment</h3>
+          <p>Discover performers, DJs, and photographers for your big day.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATS SECTION -->
+    <section class="stats">
+      <div class="stats-inner">
+        <div class="stat-item">
+          <div class="stat-number" data-target="50000">0</div>
+          <div class="stat-unit">+</div>
+          <div class="stat-label">Weddings Planned</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" data-target="98">0</div>
+          <div class="stat-unit">%</div>
+          <div class="stat-label">Satisfaction Rate</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" data-target="500">0</div>
+          <div class="stat-unit">Cr+</div>
+          <div class="stat-label">Budget Managed (₹)</div>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <div class="stat-number" data-target="6">0</div>
+          <div class="stat-unit">+</div>
+          <div class="stat-label">Wedding Cultures</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA SECTION -->
+    <section class="cta-section">
+      <div class="cta-inner">
+        <div class="cta-emojis">💍 🌸 ✨ 🎊</div>
+        <h2>Ready to plan your dream wedding?</h2>
+        <p>Join thousands of couples who planned their perfect day with WeddingBudget.AI</p>
+        <button class="btn-primary btn-large btn-glow" onclick="showPlanner()">
+          Start Planning — It's Free →
+        </button>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="logo">
+            <span class="logo-icon">🌸</span>
+            <span class="logo-text">WeddingBudget<span class="logo-ai">.AI</span></span>
+          </div>
+          <p>The world's most intuitive AI budget tool for Indian weddings.</p>
+        </div>
+        <div class="footer-links">
+          <div class="footer-col">
+            <h4>Planning</h4>
+            <a href="#">Style</a>
+            <a href="#">Venue</a>
+            <a href="#">Decor</a>
+            <a href="#">Food</a>
+          </div>
+          <div class="footer-col">
+            <h4>Resources</h4>
+            <a href="#">Blog</a>
+            <a href="#">Guides</a>
+            <a href="#">Pricing</a>
+            <a href="#">FAQ</a>
+          </div>
+          <div class="footer-col">
+            <h4>Company</h4>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+            <a href="#">Privacy</a>
+            <a href="#">Terms</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 WeddingBudget.AI. Made with 💍 in India.</span>
+      </div>
+    </footer>
+
+  </div>
+  <!-- ========== END LANDING PAGE ========== -->
+
+
+  <!-- ========== PLANNER APP ========== -->
+  <div id="planner-page" class="page">
+
+    <!-- Planner Header -->
+    <header class="header planner-header">
+      <div class="header-inner">
+        <div class="logo" onclick="showLanding()" style="cursor:pointer;">
+          <span class="logo-icon">🌸</span>
+          <span class="logo-text">WeddingBudget<span class="logo-ai">.AI</span></span>
+        </div>
+        <nav class="planner-nav" id="planner-nav">
+          <a href="#" class="planner-tab active" id="tab-style" onclick="switchTab('style'); return false;">🎨 Style</a>
+          <a href="#" class="planner-tab" id="tab-venue" onclick="switchTab('venue'); return false;">🏛️ Venue</a>
+          <a href="#" class="planner-tab" id="tab-decor" onclick="switchTab('decor'); return false;">💐 Decor AI</a>
+          <a href="#" class="planner-tab" id="tab-food" onclick="switchTab('food'); return false;">🍽️ Food</a>
+          <a href="#" class="planner-tab" id="tab-artists" onclick="switchTab('artists'); return false;">🎤 Artists</a>
+          <a href="#" class="planner-tab" id="tab-sundries" onclick="switchTab('sundries'); return false;">🎁 Sundries</a>
+          <a href="#" class="planner-tab" id="tab-logistics" onclick="switchTab('logistics'); return false;">🚗 Logistics</a>
+          <a href="#" class="planner-tab" id="tab-budget" onclick="switchTab('budget'); return false;">💰 Budget</a>
+        </nav>
+        <button class="settings-btn" title="Settings">⚙️</button>
+      </div>
+    </header>
+
+    <!-- Progress Dots -->
+    <div class="progress-bar">
+      <div class="progress-dots">
+        <span class="dot active" data-tab="style"></span>
+        <span class="dot" data-tab="venue"></span>
+        <span class="dot" data-tab="decor"></span>
+        <span class="dot" data-tab="food"></span>
+        <span class="dot" data-tab="artists"></span>
+        <span class="dot" data-tab="sundries"></span>
+        <span class="dot" data-tab="logistics"></span>
+        <span class="dot" data-tab="budget"></span>
+      </div>
+    </div>
+
+    <!-- Planner Content -->
+    <main class="planner-main">
+
+      <!-- STYLE TAB -->
+      <section class="planner-section active" id="section-style">
+        <div class="planner-card">
+          <h2 class="card-title">📅 Wedding Date</h2>
+          <div class="input-group">
+            <input type="date" id="wedding-date" class="date-input" placeholder="dd-mm-yyyy" />
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">🎊 Wedding Type</h2>
+          <div class="wedding-types-grid">
+            <div class="type-card" data-type="hindu" onclick="selectType(this)">
+              <div class="type-emoji">🍊</div>
+              <div class="type-label">Hindu</div>
+            </div>
+            <div class="type-card" data-type="islamic" onclick="selectType(this)">
+              <div class="type-emoji">🌙</div>
+              <div class="type-label">Islamic</div>
+            </div>
+            <div class="type-card" data-type="sikh" onclick="selectType(this)">
+              <div class="type-emoji">⚔️</div>
+              <div class="type-label">Sikh</div>
+            </div>
+            <div class="type-card" data-type="christian" onclick="selectType(this)">
+              <div class="type-emoji">⛪</div>
+              <div class="type-label">Christian</div>
+            </div>
+            <div class="type-card" data-type="buddhist" onclick="selectType(this)">
+              <div class="type-emoji">☸️</div>
+              <div class="type-label">Buddhist</div>
+            </div>
+            <div class="type-card" data-type="jain" onclick="selectType(this)">
+              <div class="type-emoji">🙏</div>
+              <div class="type-label">Jain</div>
+            </div>
+            <div class="type-card" data-type="mixed" onclick="selectType(this)">
+              <div class="type-emoji">🎊</div>
+              <div class="type-label">Mixed / Generic</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">💑 Guest Count</h2>
+          <div class="guest-slider-wrap">
+            <input type="range" id="guest-count" class="slider" min="50" max="2000" value="500" oninput="updateGuestCount(this.value)" />
+            <div class="slider-labels">
+              <span>50</span>
+              <span class="slider-value" id="guest-display">500 guests</span>
+              <span>2000</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">💰 Total Budget</h2>
+          <div class="budget-options">
+            <div class="budget-card" data-budget="500000" onclick="selectBudget(this)">
+              <div class="budget-range">₹5L – ₹10L</div>
+              <div class="budget-label">Budget</div>
+            </div>
+            <div class="budget-card" data-budget="1500000" onclick="selectBudget(this)">
+              <div class="budget-range">₹10L – ₹25L</div>
+              <div class="budget-label">Standard</div>
+            </div>
+            <div class="budget-card" data-budget="5000000" onclick="selectBudget(this)">
+              <div class="budget-range">₹25L – ₹1Cr</div>
+              <div class="budget-label">Premium</div>
+            </div>
+            <div class="budget-card" data-budget="15000000" onclick="selectBudget(this)">
+              <div class="budget-range">₹1Cr+</div>
+              <div class="budget-label">Luxury</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('venue')">Next: Venue →</button>
+        </div>
+      </section>
+
+      <!-- VENUE TAB -->
+      <section class="planner-section" id="section-venue">
+        <div class="planner-card">
+          <h2 class="card-title">📍 City</h2>
+          <div class="search-box">
+            <input type="text" id="city-input" placeholder="Search your city..." class="search-input" />
+          </div>
+          <div class="city-chips">
+            <span class="chip" onclick="selectCity(this)">Delhi</span>
+            <span class="chip" onclick="selectCity(this)">Mumbai</span>
+            <span class="chip" onclick="selectCity(this)">Bangalore</span>
+            <span class="chip" onclick="selectCity(this)">Hyderabad</span>
+            <span class="chip" onclick="selectCity(this)">Jaipur</span>
+            <span class="chip" onclick="selectCity(this)">Chennai</span>
+            <span class="chip" onclick="selectCity(this)">Kolkata</span>
+            <span class="chip" onclick="selectCity(this)">Pune</span>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">🏛️ Venue Type</h2>
+          <div class="wedding-types-grid">
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🏨</div>
+              <div class="type-label">5-Star Hotel</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🏰</div>
+              <div class="type-label">Palace / Fort</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🌿</div>
+              <div class="type-label">Farm House</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🎪</div>
+              <div class="type-label">Banquet Hall</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🏖️</div>
+              <div class="type-label">Beach / Outdoor</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">⛩️</div>
+              <div class="type-label">Temple Grounds</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">📋 Recommended Venues</h2>
+          <div class="venue-list">
+            <div class="venue-item">
+              <div class="venue-info">
+                <div class="venue-name">The Leela Palace</div>
+                <div class="venue-meta">5-Star • 500-2000 guests • Delhi</div>
+              </div>
+              <div class="venue-price">₹8L – ₹25L</div>
+            </div>
+            <div class="venue-item">
+              <div class="venue-info">
+                <div class="venue-name">Rambagh Palace</div>
+                <div class="venue-meta">Heritage Palace • 200-800 guests • Jaipur</div>
+              </div>
+              <div class="venue-price">₹15L – ₹50L</div>
+            </div>
+            <div class="venue-item">
+              <div class="venue-info">
+                <div class="venue-name">Grand Hyatt</div>
+                <div class="venue-meta">5-Star • 300-1500 guests • Mumbai</div>
+              </div>
+              <div class="venue-price">₹12L – ₹35L</div>
+            </div>
+            <div class="venue-item">
+              <div class="venue-info">
+                <div class="venue-name">Green Farm House</div>
+                <div class="venue-meta">Farmhouse • 100-500 guests • NCR</div>
+              </div>
+              <div class="venue-price">₹2L – ₹8L</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('decor')">Next: Decor AI →</button>
+        </div>
+      </section>
+
+      <!-- DECOR TAB -->
+      <section class="planner-section" id="section-decor">
+        <div class="planner-card no-padding">
+          <div class="decor-header">
+            <h2 class="card-title" style="padding: 24px 24px 0;">🖼️ Decor Gallery</h2>
+            <div class="decor-filters">
+              <span class="filter-chip active" onclick="filterDecor(this, 'all')">All</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'romantic')">Romantic</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'traditional')">Traditional</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'modern')">Modern</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'luxury')">Luxury</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'minimalist')">Minimalist</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'boho')">Boho</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'low')">Low</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'medium')">Medium</span>
+              <span class="filter-chip" onclick="filterDecor(this, 'high')">High</span>
+            </div>
+          </div>
+          <div class="decor-grid" id="decor-grid">
+            <!-- Cards will be generated by JS -->
+          </div>
+        </div>
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('food')">Next: Food →</button>
+        </div>
+      </section>
+
+      <!-- FOOD TAB -->
+      <section class="planner-section" id="section-food">
+        <div class="planner-card">
+          <h2 class="card-title">🍽️ Meal Type</h2>
+          <div class="wedding-types-grid">
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🥘</div>
+              <div class="type-label">Buffet</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🍱</div>
+              <div class="type-label">Plated</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🍡</div>
+              <div class="type-label">Live Counters</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🫕</div>
+              <div class="type-label">Mixed</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">🌿 Dietary Preference</h2>
+          <div class="pref-chips">
+            <span class="pref-chip" onclick="togglePref(this)">Veg Only</span>
+            <span class="pref-chip" onclick="togglePref(this)">Non-Veg</span>
+            <span class="pref-chip" onclick="togglePref(this)">Both</span>
+            <span class="pref-chip" onclick="togglePref(this)">Jain</span>
+            <span class="pref-chip" onclick="togglePref(this)">Halal</span>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">💰 Food Estimate</h2>
+          <div class="estimate-card">
+            <div class="estimate-row">
+              <span>Per Plate Cost</span>
+              <span>₹800 – ₹1,500</span>
+            </div>
+            <div class="estimate-row">
+              <span>500 Guests Total</span>
+              <span>₹4L – ₹7.5L</span>
+            </div>
+            <div class="estimate-row highlight">
+              <span>Recommended Budget</span>
+              <span>₹5.5L</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('artists')">Next: Artists →</button>
+        </div>
+      </section>
+
+      <!-- ARTISTS TAB -->
+      <section class="planner-section" id="section-artists">
+        <div class="planner-card">
+          <h2 class="card-title">🎤 Entertainment</h2>
+          <div class="artists-grid">
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">🎵</div>
+              <div class="artist-name">Live Band</div>
+              <div class="artist-price">₹50K – ₹3L</div>
+            </div>
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">🎧</div>
+              <div class="artist-name">DJ</div>
+              <div class="artist-price">₹25K – ₹1.5L</div>
+            </div>
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">💃</div>
+              <div class="artist-name">Choreographer</div>
+              <div class="artist-price">₹20K – ₹1L</div>
+            </div>
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">📸</div>
+              <div class="artist-name">Photographer</div>
+              <div class="artist-price">₹40K – ₹2.5L</div>
+            </div>
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">🎬</div>
+              <div class="artist-name">Videographer</div>
+              <div class="artist-price">₹35K – ₹2L</div>
+            </div>
+            <div class="artist-card" onclick="toggleArtist(this)">
+              <div class="artist-emoji">🎻</div>
+              <div class="artist-name">Classical Music</div>
+              <div class="artist-price">₹30K – ₹1.5L</div>
+            </div>
+          </div>
+        </div>
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('sundries')">Next: Sundries →</button>
+        </div>
+      </section>
+
+      <!-- SUNDRIES TAB -->
+      <section class="planner-section" id="section-sundries">
+        <div class="planner-card">
+          <h2 class="card-title">🎁 Wedding Extras</h2>
+          <div class="sundry-list">
+            <div class="sundry-item">
+              <div class="sundry-info">
+                <span class="sundry-icon">💌</span>
+                <div>
+                  <div class="sundry-name">Invitation Cards</div>
+                  <div class="sundry-meta">Digital + Physical</div>
+                </div>
+              </div>
+              <div class="sundry-control">
+                <input type="checkbox" class="toggle-check" onchange="updateSundry(this)" />
+                <span class="sundry-price">₹15K – ₹50K</span>
+              </div>
+            </div>
+            <div class="sundry-item">
+              <div class="sundry-info">
+                <span class="sundry-icon">🎀</span>
+                <div>
+                  <div class="sundry-name">Wedding Favours</div>
+                  <div class="sundry-meta">Per guest gift hamper</div>
+                </div>
+              </div>
+              <div class="sundry-control">
+                <input type="checkbox" class="toggle-check" onchange="updateSundry(this)" />
+                <span class="sundry-price">₹50 – ₹500/guest</span>
+              </div>
+            </div>
+            <div class="sundry-item">
+              <div class="sundry-info">
+                <span class="sundry-icon">🕯️</span>
+                <div>
+                  <div class="sundry-name">Candles & Lighting</div>
+                  <div class="sundry-meta">Ambient lighting setup</div>
+                </div>
+              </div>
+              <div class="sundry-control">
+                <input type="checkbox" class="toggle-check" onchange="updateSundry(this)" />
+                <span class="sundry-price">₹20K – ₹1L</span>
+              </div>
+            </div>
+            <div class="sundry-item">
+              <div class="sundry-info">
+                <span class="sundry-icon">🎆</span>
+                <div>
+                  <div class="sundry-name">Fireworks</div>
+                  <div class="sundry-meta">Grand finale display</div>
+                </div>
+              </div>
+              <div class="sundry-control">
+                <input type="checkbox" class="toggle-check" onchange="updateSundry(this)" />
+                <span class="sundry-price">₹50K – ₹3L</span>
+              </div>
+            </div>
+            <div class="sundry-item">
+              <div class="sundry-info">
+                <span class="sundry-icon">💍</span>
+                <div>
+                  <div class="sundry-name">Bridal Jewellery Rental</div>
+                  <div class="sundry-meta">Heritage jewellery sets</div>
+                </div>
+              </div>
+              <div class="sundry-control">
+                <input type="checkbox" class="toggle-check" onchange="updateSundry(this)" />
+                <span class="sundry-price">₹30K – ₹2L</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('logistics')">Next: Logistics →</button>
+        </div>
+      </section>
+
+      <!-- LOGISTICS TAB -->
+      <section class="planner-section" id="section-logistics">
+        <div class="planner-card">
+          <h2 class="card-title">🚗 Guest Travel</h2>
+          <div class="logistics-grid">
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🚌</div>
+              <div class="type-label">Chartered Buses</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🚗</div>
+              <div class="type-label">Car Rentals</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">✈️</div>
+              <div class="type-label">Flight Booking</div>
+            </div>
+            <div class="type-card" onclick="selectType(this)">
+              <div class="type-emoji">🏨</div>
+              <div class="type-label">Hotel Blocks</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">📋 Logistics Summary</h2>
+          <div class="estimate-card">
+            <div class="estimate-row">
+              <span>Transportation</span>
+              <span>₹1L – ₹5L</span>
+            </div>
+            <div class="estimate-row">
+              <span>Accommodation (out-of-town)</span>
+              <span>₹2L – ₹10L</span>
+            </div>
+            <div class="estimate-row highlight">
+              <span>Total Logistics Est.</span>
+              <span>₹3L – ₹15L</span>
+            </div>
+          </div>
+        </div>
+        <div class="next-btn-wrap">
+          <button class="next-btn" onclick="switchTab('budget')">Next: Budget Summary →</button>
+        </div>
+      </section>
+
+      <!-- BUDGET TAB -->
+      <section class="planner-section" id="section-budget">
+        <div class="planner-card">
+          <h2 class="card-title">💰 Budget Summary</h2>
+          <div class="budget-summary">
+            <div class="budget-total">
+              <div class="budget-total-label">Total Estimated Budget</div>
+              <div class="budget-total-amount" id="total-budget-display">₹28.5L</div>
+            </div>
+            <div class="budget-breakdown" id="budget-breakdown">
+              <div class="budget-row">
+                <div class="budget-category">
+                  <span class="budget-dot" style="background: #e91e8c;"></span>
+                  <span>Venue</span>
+                </div>
+                <div class="budget-bar-wrap">
+                  <div class="budget-bar" style="width: 35%; background: #e91e8c;"></div>
+                </div>
+                <span class="budget-amount">₹10L</span>
+              </div>
+              <div class="budget-row">
+                <div class="budget-category">
+                  <span class="budget-dot" style="background: #ff6b9d;"></span>
+                  <span>Catering</span>
+                </div>
+                <div class="budget-bar-wrap">
+                  <div class="budget-bar" style="width: 28%; background: #ff6b9d;"></div>
+                </div>
+                <span class="budget-amount">₹8L</span>
+              </div>
+              <div class="budget-row">
+                <div class="budget-category">
+                  <span class="budget-dot" style="background: #c94fa0;"></span>
+                  <span>Decor</span>
+                </div>
+                <div class="budget-bar-wrap">
+                  <div class="budget-bar" style="width: 20%; background: #c94fa0;"></div>
+                </div>
+                <span class="budget-amount">₹6L</span>
+              </div>
+              <div class="budget-row">
+                <div class="budget-category">
+                  <span class="budget-dot" style="background: #f48fb1;"></span>
+                  <span>Artists</span>
+                </div>
+                <div class="budget-bar-wrap">
+                  <div class="budget-bar" style="width: 12%; background: #f48fb1;"></div>
+                </div>
+                <span class="budget-amount">₹3L</span>
+              </div>
+              <div class="budget-row">
+                <div class="budget-category">
+                  <span class="budget-dot" style="background: #fce4ec;"></span>
+                  <span>Other</span>
+                </div>
+                <div class="budget-bar-wrap">
+                  <div class="budget-bar" style="width: 5%; background: #fce4ec; border: 1px solid #e0e0e0;"></div>
+                </div>
+                <span class="budget-amount">₹1.5L</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="planner-card">
+          <h2 class="card-title">📤 Export Your Plan</h2>
+          <div class="export-options">
+            <button class="export-btn" onclick="exportPDF()">📄 Download PDF</button>
+            <button class="export-btn" onclick="exportSheet()">📊 Export to Sheet</button>
+            <button class="export-btn" onclick="shareLink()">🔗 Share Link</button>
+          </div>
+        </div>
+
+        <div class="next-btn-wrap">
+          <button class="btn-primary" onclick="showLanding()" style="padding: 14px 40px; font-size: 1rem;">← Back to Home</button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+  <!-- ========== END PLANNER PAGE ========== -->
+
+  <script src="app.js"></script>
+</body>
+</html>
