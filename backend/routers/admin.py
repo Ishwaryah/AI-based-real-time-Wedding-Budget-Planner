@@ -92,13 +92,13 @@ def login(body: LoginRequest):
     return {"access_token": token, "token_type": "bearer", "expires_in_hours": 24}
 
 
-# ── Unprotected status ─────────────────────────────────────────────────────────
-@router.get("/")
+# ── Protected status ───────────────────────────────────────────────────────────
+@router.get("/", dependencies=[Depends(require_admin)])
 def get_admin():
     return {"module": "admin", "status": "ready", "version": "3.0.0"}
 
 
-@router.get("/stats")
+@router.get("/stats", dependencies=[Depends(require_admin)])
 def get_stats():
     return {
         "app": "weddingbudget.ai",
@@ -272,3 +272,19 @@ def label_decor_image(body: DecorLabel):
     }
     _write_labels(labels)
     return {"ok": True, "filename": body.filename}
+
+
+# ── POST /decor/retrain — retrain Decor ML model ──────────────────────────────
+@router.post("/decor/retrain")
+async def retrain_decor_model(
+    _admin=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrain the decor cost prediction model on all labelled images."""
+    try:
+        from ml.decor_model import DecorCostPredictor
+        predictor = DecorCostPredictor()
+        result = await predictor.train(db)
+        return {"ok": True, **result}
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))

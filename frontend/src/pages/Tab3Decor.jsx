@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { useWedding, formatRupees } from '../context/WeddingContext'
 import { scrollToNextSection } from '../utils/scrollToNext'
 
-const API = 'http://localhost:8000/api'
+import { API_BASE as API } from '../utils/config'
 
 const DECOR_LIBRARY = [
   { id:1,  imageUrl:'https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80', emoji:'🌸', name:'Floral Arch Mandap',       style:'Romantic',    complexity:'High',   base_cost:200000, function_type:'Mandap' },
@@ -86,6 +86,247 @@ function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
         display: isSel ? 'flex' : 'none',
         animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
       }}>✓</div>
+    </div>
+  )
+}
+
+// ── Decor Inspiration Library constants ───────────────────────────────────────
+const FT_OPTIONS = ['Mandap','Entrance','Table Decor','Ceiling','Backdrop','Stage','Lighting','Photo Booth','Aisle','Pillars']
+const STYLE_OPTIONS = ['Romantic','Traditional','Modern','Luxury','Minimalist','Boho','Whimsical','Rustic','Playful']
+
+const FT_COLOR = {
+  Mandap:'#7C3AED', Entrance:'#059669', 'Table Decor':'#D97706', Ceiling:'#0284C7',
+  Backdrop:'#DB2777', Stage:'#DC2626', Lighting:'#F59E0B', 'Photo Booth':'#7C3AED',
+  Aisle:'#059669', Pillars:'#6B7280'
+}
+
+const RULE_RANGES = {1:[30000,80000],2:[80000,200000],3:[200000,500000],4:[500000,1000000],5:[1000000,2500000]}
+
+function placeholderCards() {
+  return [
+    {id:'ph1',function_type:'Mandap',style:'Romantic',complexity:4,predicted_low:500000,predicted_mid:750000,predicted_high:1000000,method:'rule-based',url:null,filename:'Mandap Decor'},
+    {id:'ph2',function_type:'Entrance',style:'Traditional',complexity:2,predicted_low:80000,predicted_mid:140000,predicted_high:200000,method:'rule-based',url:null,filename:'Entrance Decor'},
+    {id:'ph3',function_type:'Stage',style:'Modern',complexity:3,predicted_low:200000,predicted_mid:350000,predicted_high:500000,method:'rule-based',url:null,filename:'Stage Decor'},
+    {id:'ph4',function_type:'Ceiling',style:'Luxury',complexity:4,predicted_low:500000,predicted_mid:750000,predicted_high:1000000,method:'rule-based',url:null,filename:'Ceiling Decor'},
+    {id:'ph5',function_type:'Backdrop',style:'Boho',complexity:2,predicted_low:80000,predicted_mid:140000,predicted_high:200000,method:'rule-based',url:null,filename:'Backdrop Decor'},
+    {id:'ph6',function_type:'Table Decor',style:'Minimalist',complexity:1,predicted_low:30000,predicted_mid:55000,predicted_high:80000,method:'rule-based',url:null,filename:'Table Decor'},
+  ]
+}
+
+function LibraryCard({ item, isLibSel, onToggle }) {
+  const [imgErr, setImgErr] = useState(false)
+  const ftColor = FT_COLOR[item.function_type] || '#6B7280'
+  return (
+    <div
+      onClick={() => onToggle(item)}
+      style={{
+        borderRadius:14, overflow:'hidden', cursor:'pointer', position:'relative',
+        border:`2px solid ${isLibSel ? '#023047' : 'var(--border)'}`,
+        background: isLibSel ? '#EFF6FF' : 'white',
+        boxShadow: isLibSel ? '0 4px 20px rgba(2,48,71,0.18)' : '0 2px 8px rgba(0,0,0,0.05)',
+        transition:'all 0.18s',
+        breakInside:'avoid', marginBottom:16,
+      }}
+    >
+      {item.url && !imgErr ? (
+        <img src={item.url} alt={item.filename} onError={() => setImgErr(true)}
+          style={{ width:'100%', height:150, objectFit:'cover', display:'block' }} />
+      ) : (
+        <div style={{ height:120, display:'flex', alignItems:'center', justifyContent:'center',
+          background:`linear-gradient(135deg,${ftColor}18,${ftColor}08)`, fontSize:40 }}>
+          🎨
+        </div>
+      )}
+      <div style={{ padding:'10px 12px 12px' }}>
+        <div style={{ fontSize:11, fontWeight:700, marginBottom:6, display:'flex', gap:5, flexWrap:'wrap' }}>
+          <span style={{ padding:'2px 8px', borderRadius:8, background:ftColor+'22', color:ftColor }}>
+            {item.function_type}
+          </span>
+          {item.style && (
+            <span style={{ padding:'2px 8px', borderRadius:8, background:'#F3F4F6', color:'#374151' }}>
+              {item.style}
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize:11, color:'var(--muted)', marginBottom:6 }}>
+          {item.filename?.replace(/\.[^.]+$/, '').replace(/_/g, ' ')}
+        </div>
+        <div style={{ fontFamily:'EB Garamond,serif', fontSize:18, fontWeight:700, color:'var(--primary)' }}>
+          {formatRupees(item.predicted_mid)}
+        </div>
+        <div style={{ fontSize:11, color:'var(--muted)' }}>
+          {formatRupees(item.predicted_low)} – {formatRupees(item.predicted_high)}
+        </div>
+        <div style={{ marginTop:6 }}>
+          <span style={{
+            fontSize:10, padding:'2px 7px', borderRadius:6, fontWeight:700,
+            background: item.method === 'ml' ? '#D1FAE5' : '#FEF3C7',
+            color: item.method === 'ml' ? '#065F46' : '#92400E',
+          }}>
+            {item.method === 'ml' ? '🤖 ML' : '📐 Rule-based'}
+          </span>
+        </div>
+      </div>
+      {isLibSel && (
+        <div style={{
+          position:'absolute', top:8, right:8, width:24, height:24,
+          background:'#023047', borderRadius:'50%', display:'flex',
+          alignItems:'center', justifyContent:'center', color:'white', fontSize:12, fontWeight:'bold'
+        }}>✓</div>
+      )}
+    </div>
+  )
+}
+
+function DecorLibrarySection() {
+  const { updateDecorSelections } = useWedding()
+  const [items, setItems] = useState([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [loading, setLoading] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
+  const [ftFilter, setFtFilter] = useState('')
+  const [styleFilter, setStyleFilter] = useState('')
+  const [labelledOnly, setLabelledOnly] = useState(false)
+  const [libSelected, setLibSelected] = useState([])
+  const [apiError, setApiError] = useState(false)
+
+  const fetchItems = useCallback(async (pg, append = false) => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({ page: pg, limit: 20 })
+      if (ftFilter) params.set('function_type', ftFilter)
+      if (styleFilter) params.set('style', styleFilter)
+      if (labelledOnly) params.set('is_labelled', 'true')
+      const res = await fetch(`${API}/decor/library?${params}`)
+      if (!res.ok) throw new Error('API error')
+      const data = await res.json()
+      setItems(prev => append ? [...prev, ...data.items] : data.items)
+      setTotal(data.total)
+      setHasMore(pg * 20 < data.total)
+      setApiError(false)
+    } catch {
+      if (!append) { setItems(placeholderCards()); setApiError(true) }
+    }
+    setLoading(false)
+  }, [ftFilter, styleFilter, labelledOnly])
+
+  useEffect(() => { setPage(1); fetchItems(1, false) }, [ftFilter, styleFilter, labelledOnly])
+
+  const toggleLib = (item) => {
+    setLibSelected(prev => {
+      const exists = prev.find(s => s.id === item.id)
+      const next = exists ? prev.filter(s => s.id !== item.id) : [...prev, item]
+      return next
+    })
+  }
+
+  const libTotal = libSelected.reduce((s, i) => s + (i.predicted_mid || 0), 0)
+  const libLow = libSelected.reduce((s, i) => s + (i.predicted_low || 0), 0)
+  const libHigh = libSelected.reduce((s, i) => s + (i.predicted_high || 0), 0)
+
+  const addToBudget = () => {
+    updateDecorSelections(libSelected.map(s => s.id), libTotal)
+  }
+
+  return (
+    <div className="section-card" style={{ marginTop:24 }}>
+      <div className="section-title">🖼️ Decor Inspiration Library</div>
+      {apiError && (
+        <div style={{ marginBottom:12, padding:'10px 14px', background:'#FEF3C7', borderRadius:10,
+          fontSize:12, color:'#92400E', border:'1px solid #FDE68A' }}>
+          ⚠️ Could not reach server — showing placeholder estimates
+        </div>
+      )}
+
+      {/* Filter bar */}
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:16, alignItems:'center' }}>
+        <select value={ftFilter} onChange={e => setFtFilter(e.target.value)}
+          className="form-select" style={{ minWidth:140, fontSize:12 }}>
+          <option value="">All Types</option>
+          {FT_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
+        </select>
+        <select value={styleFilter} onChange={e => setStyleFilter(e.target.value)}
+          className="form-select" style={{ minWidth:130, fontSize:12 }}>
+          <option value="">All Styles</option>
+          {STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600,
+          color:'var(--muted)', cursor:'pointer' }}>
+          <input type="checkbox" checked={labelledOnly} onChange={e => setLabelledOnly(e.target.checked)} />
+          Labelled only
+        </label>
+        {(ftFilter || styleFilter || labelledOnly) && (
+          <button onClick={() => { setFtFilter(''); setStyleFilter(''); setLabelledOnly(false) }}
+            style={{ fontSize:11, padding:'4px 10px', borderRadius:8, border:'none',
+              background:'#F3F4F6', color:'#374151', cursor:'pointer' }}>Clear</button>
+        )}
+      </div>
+
+      {/* Masonry grid */}
+      <div style={{
+        columnCount: 3, columnGap: 16,
+        // responsive via media-query override not available inline; grid fallback for small:
+      }}>
+        <style>{`
+          @media(max-width:768px){.decor-lib-grid{column-count:2!important}}
+          @media(max-width:480px){.decor-lib-grid{column-count:1!important}}
+        `}</style>
+        <div className="decor-lib-grid" style={{ columnCount:3, columnGap:16 }}>
+          {items.map(item => (
+            <LibraryCard key={item.id}
+              item={item}
+              isLibSel={!!libSelected.find(s => s.id === item.id)}
+              onToggle={toggleLib} />
+          ))}
+          {loading && Array.from({length:3}).map((_,i) => (
+            <div key={`sk${i}`} style={{ height:220, borderRadius:14, background:'#F3F4F6',
+              marginBottom:16, breakInside:'avoid', animation:'pulse 1.5s ease-in-out infinite' }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Load More */}
+      {hasMore && !loading && (
+        <div style={{ textAlign:'center', marginTop:8 }}>
+          <button onClick={() => { const next = page + 1; setPage(next); fetchItems(next, true) }}
+            style={{ padding:'10px 28px', borderRadius:10, border:'1.5px solid var(--border)',
+              background:'white', fontWeight:600, fontSize:13, cursor:'pointer' }}>
+            Load More ({total - items.length} remaining)
+          </button>
+        </div>
+      )}
+
+      {/* Sticky bottom bar */}
+      {libSelected.length > 0 && (
+        <div style={{
+          position:'sticky', bottom:16, zIndex:40, marginTop:16,
+          background:'linear-gradient(135deg,#023047,#04699b)',
+          borderRadius:16, padding:'14px 20px',
+          display:'flex', justifyContent:'space-between', alignItems:'center',
+          boxShadow:'0 8px 32px rgba(2,48,71,0.3)'
+        }}>
+          <div style={{ color:'white' }}>
+            <div style={{ fontWeight:700, fontSize:14 }}>
+              {libSelected.length} design{libSelected.length > 1 ? 's' : ''} shortlisted
+            </div>
+            <div style={{ fontSize:12, opacity:0.8, marginTop:2 }}>
+              Est. {formatRupees(libLow)} – {formatRupees(libHigh)}
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+            <div style={{ fontFamily:'EB Garamond,serif', fontSize:22, fontWeight:800, color:'#FDE68A' }}>
+              {formatRupees(libTotal)}
+            </div>
+            <button onClick={addToBudget} style={{
+              padding:'10px 20px', borderRadius:10, border:'none',
+              background:'#FFB703', color:'#023047', fontWeight:700, fontSize:13, cursor:'pointer'
+            }}>
+              Add to Budget
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -382,6 +623,9 @@ export default function Tab3Decor() {
           </div>
         )}
       </div>
+
+      {/* Decor Inspiration Library */}
+      <DecorLibrarySection />
 
       {/* Sticky Next button */}
       <motion.div

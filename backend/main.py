@@ -15,17 +15,6 @@ async def lifespan(app: FastAPI):
 
     import logging
 
-    # Load Decor ML model (non-fatal if not trained yet)
-    try:
-        from ml.decor_model import get_predictor
-        p = get_predictor()
-        if p.model_mid is not None:
-            logging.info(f"Decor ML model loaded ({p.n_samples} samples)")
-        else:
-            logging.info("Decor ML using rule-based fallback")
-    except Exception as exc:
-        logging.warning(f"Decor ML init skipped: {exc}")
-
     # Load RL Budget Agent
     try:
         from ml.rl_agent import get_rl_agent
@@ -37,6 +26,17 @@ async def lifespan(app: FastAPI):
         logging.info(f"RL Agent loaded ({total_rl} training samples across {cats_rl} categories)")
     except Exception as exc:
         logging.warning(f"RL Agent init skipped: {exc}")
+
+    # Load Decor ML model (non-fatal if not trained yet)
+    try:
+        from ml.decor_model import get_predictor
+        p = get_predictor()
+        if p.model_mid is not None:
+            logging.info(f"Decor ML model loaded ({p.n_samples} samples)")
+        else:
+            logging.info("Decor ML using rule-based fallback")
+    except Exception as exc:
+        logging.warning(f"Decor ML init skipped: {exc}")
 
     yield
 
