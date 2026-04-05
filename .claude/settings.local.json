@@ -18,7 +18,8 @@
       "Bash(curl -s -X POST http://localhost:8001/api/decor/predict-legacy -H 'Content-Type: application/json' -d '{\"function_type\":\"Mandap\",\"style\":\"Romantic\",\"complexity\":\"High\",\"image_seed\":42}')",
       "Bash(python -c \"import os; print\\(len\\(os.listdir\\('decor_dataset/data/images'\\)\\)\\)\")",
       "Bash(python -c \"from routers import budget, decor, admin\")",
-      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); from routers import budget, decor, admin, food, artists, logistics, sundries\")"
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); from routers import budget, decor, admin, food, artists, logistics, sundries\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); import models\")"
     ]
   }
 }
