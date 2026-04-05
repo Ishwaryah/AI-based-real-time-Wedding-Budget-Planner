@@ -128,15 +128,11 @@ function LibraryCard({ item, isLibSel, onToggle }) {
         breakInside:'avoid', marginBottom:16,
       }}
     >
-      {item.url && !imgErr ? (
-        <img src={item.url} alt={item.filename} onError={() => setImgErr(true)}
-          style={{ width:'100%', height:150, objectFit:'cover', display:'block' }} />
-      ) : (
-        <div style={{ height:120, display:'flex', alignItems:'center', justifyContent:'center',
-          background:`linear-gradient(135deg,${ftColor}18,${ftColor}08)`, fontSize:40 }}>
-          🎨
-        </div>
-      )}
+      <img
+        src={`${API.replace('/api','')}/decor-images/${item.filename}`}
+        onError={(e) => e.target.src='/placeholder-decor.jpg'}
+        style={{width:'100%', height:140, objectFit:'cover', borderRadius:8}}
+      />
       <div style={{ padding:'10px 12px 12px' }}>
         <div style={{ fontSize:11, fontWeight:700, marginBottom:6, display:'flex', gap:5, flexWrap:'wrap' }}>
           <span style={{ padding:'2px 8px', borderRadius:8, background:ftColor+'22', color:ftColor }}>
