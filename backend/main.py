@@ -92,6 +92,7 @@ def root():
     return {"message": "weddingbudget.AI Backend Running!", "docs": "/docs", "version": "1.0.0"}
 
 @app.get("/health")
+@app.get("/api/health")
 def health():
     rl_info = {}
     try:
