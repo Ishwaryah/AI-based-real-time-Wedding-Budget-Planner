@@ -5,7 +5,8 @@ falls back to SQLite for local development.
 """
 import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
 # ── Engine setup ───────────────────────────────────────────────────────────────
 _DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -29,8 +30,7 @@ AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=F
 
 
 # ── Base class ─────────────────────────────────────────────────────────────────
-class Base(DeclarativeBase):
-    pass
+Base = declarative_base()
 
 
 # ── FastAPI dependency ─────────────────────────────────────────────────────────
