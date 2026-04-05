@@ -10,7 +10,7 @@
 |-----|-------------|
 | Style | Wedding type, date (weekend +15% uplift), event selector |
 | Venue | Venue type, city, guest count, rooms auto-calculator |
-| Decor AI | ML cost predictor (MobileNetV2 + RandomForest) + similarity search |
+| Decor AI | ML cost predictor (MobileNetV2 + GradientBoosting) + similarity search |
 | Food | Meal tiers, bar type, specialty counters, live per-head estimate |
 | Artists | Named artist selector with negotiated fee ranges |
 | Sundries | Room baskets, hampers, rituals — auto-calculated |
@@ -72,7 +72,7 @@ weddingbudget.ai/
 ## AI Components
 
 ### Decor Cost Predictor (Tab 3)
-- Model: RandomForestRegressor
+- Model: GradientBoostingRegressor
 - Features: MobileNetV2 image embeddings (1280-dim) + one-hot style tags
 - Output: Predicted cost ± 20% range + top-3 similar designs (cosine similarity)
 
