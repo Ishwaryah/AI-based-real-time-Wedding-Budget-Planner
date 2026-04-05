@@ -3,7 +3,7 @@ import os
 import numpy as np
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), "decor_model.pkl")
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "decor_images")
+IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "images")
 
 # Rule-based cost ranges (INR) by complexity 1-5
 RULE_RANGES = {
