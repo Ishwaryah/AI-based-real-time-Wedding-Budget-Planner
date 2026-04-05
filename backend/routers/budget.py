@@ -8,7 +8,7 @@ from services.budget_engine import calculate_full_budget, run_pso_optimizer
 from models.cost_tables import ARTIST_COSTS, SPECIALTY_COUNTER_COSTS
 from database import get_db
 from ml.rl_agent import get_rl_agent, BUDGET_CATEGORIES
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
@@ -105,7 +105,7 @@ def get_counters():
     return {"counters": SPECIALTY_COUNTER_COSTS}
 
 @router.post("/log-actual")
-async def log_actual_cost(payload: LogActualPayload, db: AsyncSession = Depends(get_db)):
+def log_actual_cost(payload: LogActualPayload, db: Session = Depends(get_db)):
     """Log an actual spend to train the RL agent."""
     if payload.category not in BUDGET_CATEGORIES:
         raise HTTPException(status_code=400, detail=f"Unknown category. Must be one of: {BUDGET_CATEGORIES}")
@@ -116,7 +116,7 @@ async def log_actual_cost(payload: LogActualPayload, db: AsyncSession = Depends(
     try:
         from models import BudgetTracker
         from sqlalchemy import insert
-        await db.execute(
+        db.execute(
             insert(BudgetTracker).values(
                 session_id = payload.session_id,
                 category   = payload.category,
@@ -125,12 +125,12 @@ async def log_actual_cost(payload: LogActualPayload, db: AsyncSession = Depends(
                 difference = payload.actual - payload.estimated,
             )
         )
-        await db.commit()
+        db.commit()
     except Exception:
         pass  # non-fatal
 
     agent  = get_rl_agent()
-    result = await agent.update(payload.category, payload.estimated, payload.actual, db)
+    result = agent.update(payload.category, payload.estimated, payload.actual, db)
 
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -153,7 +153,7 @@ async def log_actual_cost(payload: LogActualPayload, db: AsyncSession = Depends(
 
 
 @router.get("/rl-stats")
-async def get_rl_stats(db: AsyncSession = Depends(get_db)):
+def get_rl_stats(db: Session = Depends(get_db)):
     """Return per-category accuracy stats + overall stats."""
     agent = get_rl_agent()
     stats = agent.get_stats()
@@ -161,7 +161,7 @@ async def get_rl_stats(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/rl-multipliers")
-async def get_rl_multipliers(db: AsyncSession = Depends(get_db)):
+def get_rl_multipliers(db: Session = Depends(get_db)):
     """Admin view — return all current multipliers with training counts."""
     agent = get_rl_agent()
     mults  = agent.get_multipliers()

@@ -109,7 +109,7 @@ class DecorCostPredictor:
             except Exception:
                 self.pca = None
 
-    async def train(self, db_session=None) -> dict:
+    def train(self, db_session=None) -> dict:
         """Train GradientBoostingRegressor on MobileNetV2/PCA + pixel features.
 
         Returns a dict with keys: method, samples, accuracy, cv_score.

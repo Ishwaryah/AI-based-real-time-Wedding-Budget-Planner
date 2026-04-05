@@ -44,16 +44,16 @@ class BudgetRLAgent:
 
     # ── State persistence ────────────────────────────────────────────────────
 
-    async def load_state(self, db):
+    def load_state(self, db):
         """Load multipliers from rl_agent_state and counts from rl_training_log."""
         from ml.rl_storage import load_rl_state, load_training_counts
         try:
-            stored_mults = await load_rl_state(db)
+            stored_mults = load_rl_state(db)
             for cat, mult in stored_mults.items():
                 if cat in self.multipliers:
                     self.multipliers[cat] = mult
 
-            counts = await load_training_counts(db)
+            counts = load_training_counts(db)
             for cat, count in counts.items():
                 if cat in self.training_counts:
                     self.training_counts[cat] = count
@@ -64,11 +64,11 @@ class BudgetRLAgent:
         except Exception as exc:
             logger.warning(f"RL load_state failed (using defaults): {exc}")
 
-    async def save_state(self, db):
+    def save_state(self, db):
         """Upsert all multipliers to rl_agent_state table."""
         from ml.rl_storage import save_rl_state
         try:
-            await save_rl_state(db, self.multipliers)
+            save_rl_state(db, self.multipliers)
         except Exception as exc:
             logger.warning(f"RL save_state failed: {exc}")
 
@@ -79,7 +79,7 @@ class BudgetRLAgent:
         multiplier = self.multipliers.get(category, 1.0)
         return base_estimate * multiplier
 
-    async def update(self, category: str, estimated: float, actual: float, db) -> dict:
+    def update(self, category: str, estimated: float, actual: float, db) -> dict:
         """Update multiplier from observed actual vs estimated cost.
 
         Formula:
@@ -116,7 +116,7 @@ class BudgetRLAgent:
         # Persist
         from ml.rl_storage import log_update
         try:
-            await log_update(
+            log_update(
                 db=db,
                 category=category,
                 estimated=estimated,
@@ -125,7 +125,7 @@ class BudgetRLAgent:
                 new_multiplier=new_multiplier,
                 accuracy_delta=accuracy_delta,
             )
-            await self.save_state(db)
+            self.save_state(db)
         except Exception as exc:
             logger.warning(f"RL persist failed: {exc}")
 
@@ -191,6 +191,9 @@ class BudgetRLAgent:
             "least_accurate_category":  least_accurate,
             "rl_active":                total_samples > 0,
         }
+
+    def get_multipliers(self):
+        return dict(self.multipliers)
 
 
 # ── Singleton ────────────────────────────────────────────────────────────────

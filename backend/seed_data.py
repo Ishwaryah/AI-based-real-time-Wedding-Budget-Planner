@@ -1,7 +1,6 @@
 """Seed initial data into the database on first startup."""
-import asyncio
 from sqlalchemy import select, func
-from database import AsyncSessionLocal, create_all
+from database import SessionLocal, create_all
 from models import Artist, FBRate, LogisticsCost, AdminSetting, RLTrainingLog
 
 
@@ -109,25 +108,19 @@ LOGISTICS = [
 ]
 
 # RL training samples: (category, estimated, actual)
-# 5 categories × 3 samples each = 15 total
 RL_TRAINING_SAMPLES = [
-    # Venue — actual tends to run over estimate
     ("Venue",                    800000,   920000),
     ("Venue",                   1200000,  1350000),
     ("Venue",                    500000,   580000),
-    # Food & Beverages — slight under-estimate
     ("Food & Beverages",         600000,   670000),
     ("Food & Beverages",        1000000,  1120000),
     ("Food & Beverages",         400000,   440000),
-    # Decor & Design — often over-budget
     ("Decor & Design",           350000,   420000),
     ("Decor & Design",           700000,   810000),
     ("Decor & Design",           200000,   230000),
-    # Artists & Entertainment — fairly accurate
     ("Artists & Entertainment",  300000,   290000),
     ("Artists & Entertainment",  800000,   780000),
     ("Artists & Entertainment",  150000,   160000),
-    # Logistics & Transport — slight under
     ("Logistics & Transport",     80000,    95000),
     ("Logistics & Transport",    120000,   140000),
     ("Logistics & Transport",     50000,    58000),
@@ -139,16 +132,17 @@ ADMIN_SETTINGS = [
 ]
 
 
-async def seed():
+def seed():
     """Seed all tables if they are empty."""
-    async with AsyncSessionLocal() as db:
+    db = SessionLocal()
+    try:
         # Artists
-        count = (await db.execute(select(func.count()).select_from(Artist))).scalar()
+        count = db.execute(select(func.count()).select_from(Artist)).scalar()
         if count == 0:
             db.add_all([Artist(**a) for a in ARTISTS])
 
         # F&B rates
-        count = (await db.execute(select(func.count()).select_from(FBRate))).scalar()
+        count = db.execute(select(func.count()).select_from(FBRate)).scalar()
         if count == 0:
             db.add_all([
                 FBRate(meal_type=mt, tier=tier, occasion=occ, per_head_cost=cost)
@@ -156,7 +150,7 @@ async def seed():
             ])
 
         # Logistics
-        count = (await db.execute(select(func.count()).select_from(LogisticsCost))).scalar()
+        count = db.execute(select(func.count()).select_from(LogisticsCost)).scalar()
         if count == 0:
             db.add_all([
                 LogisticsCost(city=city, service_type=svc, unit_cost=cost, unit="per_event")
@@ -164,32 +158,42 @@ async def seed():
             ])
 
         # Admin settings
-        count = (await db.execute(select(func.count()).select_from(AdminSetting))).scalar()
+        count = db.execute(select(func.count()).select_from(AdminSetting)).scalar()
         if count == 0:
             db.add_all([AdminSetting(key=k, value=v) for k, v in ADMIN_SETTINGS])
 
-        await db.commit()
+        db.commit()
         print("[OK] Seed data inserted.")
+    finally:
+        db.close()
 
-    # RL training — run outside the main session so each update can commit its own state
-    count = 0
-    async with AsyncSessionLocal() as db:
-        count = (await db.execute(select(func.count()).select_from(RLTrainingLog))).scalar()
+    # RL training — run outside the main session
+    db = SessionLocal()
+    try:
+        count = db.execute(select(func.count()).select_from(RLTrainingLog)).scalar()
+    finally:
+        db.close()
 
     if count == 0:
         from ml.rl_agent import get_rl_agent
         agent = get_rl_agent()
-        async with AsyncSessionLocal() as db:
-            await agent.load_state(db)
+        db = SessionLocal()
+        try:
+            agent.load_state(db)
+        finally:
+            db.close()
         for category, estimated, actual in RL_TRAINING_SAMPLES:
-            async with AsyncSessionLocal() as db:
-                await agent.update(category=category, estimated=estimated, actual=actual, db=db)
-                await db.commit()
+            db = SessionLocal()
+            try:
+                agent.update(category=category, estimated=estimated, actual=actual, db=db)
+                db.commit()
+            finally:
+                db.close()
         print(f"[OK] RL agent seeded with {len(RL_TRAINING_SAMPLES)} training samples.")
     else:
         print(f"[--] RL training log already has {count} entries, skipping.")
 
 
 if __name__ == "__main__":
-    asyncio.run(create_all())
-    asyncio.run(seed())
+    create_all()
+    seed()

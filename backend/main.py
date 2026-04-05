@@ -12,23 +12,23 @@ async def lifespan(app: FastAPI):
     if not os.environ.get("DATABASE_URL"):
         logging.warning("WARNING: No DATABASE_URL set, using SQLite fallback")
     # Create tables and seed data on startup
-    from database import create_all as _create_all, AsyncSessionLocal
+    from database import create_all as _create_all, SessionLocal
     from seed_data import seed as _seed
-    await _create_all()
-    await _seed()
+    _create_all()
+    _seed()
 
     from ml.import_images import import_images as _import_images
-    await _import_images()
+    _import_images()
 
     # Auto-label with MobileNetV2+KMeans if < 200 labels, then retrain model
     try:
         from ml.auto_label import maybe_auto_label, _read_labels
         if len(_read_labels()) < 200:
-            newly_labelled = await maybe_auto_label()
+            newly_labelled = maybe_auto_label()
             if newly_labelled > 0:
                 from ml.decor_model import get_predictor
                 _p = get_predictor()
-                _retrain = await _p.train()
+                _retrain = _p.train()
                 logging.info(
                     "Auto-labelled %d images, model retrained (%s samples, accuracy=%s)",
                     newly_labelled,
@@ -42,8 +42,8 @@ async def lifespan(app: FastAPI):
     try:
         from ml.rl_agent import get_rl_agent
         agent = get_rl_agent()
-        async with AsyncSessionLocal() as db:
-            await agent.load_state(db)
+        with SessionLocal() as db:
+            agent.load_state(db)
         total_rl = sum(agent.training_counts.values())
         cats_rl  = sum(1 for c in agent.training_counts.values() if c > 0)
         logging.info(f"RL Agent loaded ({total_rl} training samples across {cats_rl} categories)")

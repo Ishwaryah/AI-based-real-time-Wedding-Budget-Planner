@@ -178,7 +178,7 @@ def run_auto_label(force: bool = False) -> int:
     return labelled
 
 
-async def maybe_auto_label() -> int:
+def maybe_auto_label() -> int:
     """Called on startup: auto-label if fewer than 200 labelled images exist.
 
     Returns count of newly labelled images.

@@ -8,7 +8,7 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy import select, delete
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from auth import authenticate_admin, create_access_token, require_admin
 from database import get_db
@@ -110,25 +110,25 @@ def get_stats():
 
 # ── Artists ────────────────────────────────────────────────────────────────────
 @router.get("/artists", dependencies=[Depends(require_admin)])
-async def get_artists(db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(select(Artist).order_by(Artist.id))).scalars().all()
+def get_artists(db: Session = Depends(get_db)):
+    rows = db.execute(select(Artist).order_by(Artist.id)).scalars().all()
     return [{"id": r.id, "name": r.name, "type": r.type,
              "min_fee": r.min_fee, "max_fee": r.max_fee, "city": r.city} for r in rows]
 
 
 @router.post("/artists", dependencies=[Depends(require_admin)])
-async def add_artist(artist: ArtistIn, db: AsyncSession = Depends(get_db)):
+def add_artist(artist: ArtistIn, db: Session = Depends(get_db)):
     row = Artist(**artist.model_dump())
     db.add(row)
-    await db.commit()
-    await db.refresh(row)
+    db.commit()
+    db.refresh(row)
     return {"id": row.id, "name": row.name, "type": row.type,
             "min_fee": row.min_fee, "max_fee": row.max_fee, "city": row.city}
 
 
 @router.put("/artists/{artist_id}", dependencies=[Depends(require_admin)])
-async def update_artist(artist_id: int, artist: ArtistIn, db: AsyncSession = Depends(get_db)):
-    row = await db.get(Artist, artist_id)
+def update_artist(artist_id: int, artist: ArtistIn, db: Session = Depends(get_db)):
+    row = db.get(Artist, artist_id)
     if not row:
         raise HTTPException(status_code=404, detail="Artist not found")
     # version snapshot
@@ -140,26 +140,26 @@ async def update_artist(artist_id: int, artist: ArtistIn, db: AsyncSession = Dep
     ))
     for k, v in artist.model_dump().items():
         setattr(row, k, v)
-    await db.commit()
-    await db.refresh(row)
+    db.commit()
+    db.refresh(row)
     return {"id": row.id, "name": row.name, "type": row.type,
             "min_fee": row.min_fee, "max_fee": row.max_fee, "city": row.city}
 
 
 @router.delete("/artists/{artist_id}", dependencies=[Depends(require_admin)])
-async def delete_artist(artist_id: int, db: AsyncSession = Depends(get_db)):
-    row = await db.get(Artist, artist_id)
+def delete_artist(artist_id: int, db: Session = Depends(get_db)):
+    row = db.get(Artist, artist_id)
     if not row:
         raise HTTPException(status_code=404, detail="Artist not found")
-    await db.delete(row)
-    await db.commit()
+    db.delete(row)
+    db.commit()
     return {"ok": True}
 
 
 # ── F&B Rates ──────────────────────────────────────────────────────────────────
 @router.get("/fb-rates", dependencies=[Depends(require_admin)])
-async def get_fb_rates(db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(select(FBRate))).scalars().all()
+def get_fb_rates(db: Session = Depends(get_db)):
+    rows = db.execute(select(FBRate)).scalars().all()
     # Reconstruct nested dict: {meal_type: {tier: {occasion: cost}}}
     result: dict = {}
     for r in rows:
@@ -168,20 +168,20 @@ async def get_fb_rates(db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/fb-rates", dependencies=[Depends(require_admin)])
-async def update_fb_rates(rates: FBRates, db: AsyncSession = Depends(get_db)):
-    await db.execute(delete(FBRate))
+def update_fb_rates(rates: FBRates, db: Session = Depends(get_db)):
+    db.execute(delete(FBRate))
     for meal_type, tiers in rates.model_dump().items():
         for tier, occasions in tiers.items():
             for occasion, cost in occasions.items():
                 db.add(FBRate(meal_type=meal_type, tier=tier, occasion=occasion, per_head_cost=cost))
-    await db.commit()
+    db.commit()
     return rates
 
 
 # ── Logistics ──────────────────────────────────────────────────────────────────
 @router.get("/logistics", dependencies=[Depends(require_admin)])
-async def get_logistics(db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(select(LogisticsCost))).scalars().all()
+def get_logistics(db: Session = Depends(get_db)):
+    rows = db.execute(select(LogisticsCost)).scalars().all()
     result: dict = {}
     for r in rows:
         result.setdefault(r.city, {})[r.service_type] = r.unit_cost
@@ -189,37 +189,36 @@ async def get_logistics(db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/logistics/{city}", dependencies=[Depends(require_admin)])
-async def update_logistics_city(city: str, data: LogisticsCity, db: AsyncSession = Depends(get_db)):
+def update_logistics_city(city: str, data: LogisticsCity, db: Session = Depends(get_db)):
     for svc, cost in [("ghodi", data.ghodi), ("dholi", data.dholi),
                       ("transfer_per_trip", data.transfer_per_trip)]:
-        result = await db.execute(
+        row = db.execute(
             select(LogisticsCost).where(LogisticsCost.city == city, LogisticsCost.service_type == svc)
-        )
-        row = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if row:
             row.unit_cost = cost
         else:
             db.add(LogisticsCost(city=city, service_type=svc, unit_cost=cost, unit="per_event"))
-    await db.commit()
+    db.commit()
     return {"ghodi": data.ghodi, "dholi": data.dholi, "transfer_per_trip": data.transfer_per_trip}
 
 
 @router.post("/logistics", dependencies=[Depends(require_admin)])
-async def add_logistics_city(data: LogisticsCity, db: AsyncSession = Depends(get_db)):
+def add_logistics_city(data: LogisticsCity, db: Session = Depends(get_db)):
     for svc, cost in [("ghodi", data.ghodi), ("dholi", data.dholi),
                       ("transfer_per_trip", data.transfer_per_trip)]:
         db.add(LogisticsCost(city=data.city, service_type=svc, unit_cost=cost, unit="per_event"))
-    await db.commit()
+    db.commit()
     return {data.city: {"ghodi": data.ghodi, "dholi": data.dholi,
                         "transfer_per_trip": data.transfer_per_trip}}
 
 
 # ── Contingency (stored in admin_settings) ─────────────────────────────────────
 @router.get("/contingency", dependencies=[Depends(require_admin)])
-async def get_contingency(db: AsyncSession = Depends(get_db)):
-    rows = (await db.execute(
+def get_contingency(db: Session = Depends(get_db)):
+    rows = db.execute(
         select(AdminSetting).where(AdminSetting.key.in_(["contingency_pct", "weekend_surcharge_pct"]))
-    )).scalars().all()
+    ).scalars().all()
     data = {r.key: float(r.value) for r in rows}
     return {
         "contingency_pct": data.get("contingency_pct", 0.08),
@@ -228,24 +227,22 @@ async def get_contingency(db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/contingency", dependencies=[Depends(require_admin)])
-async def update_contingency(data: ContingencySettings, db: AsyncSession = Depends(get_db)):
+def update_contingency(data: ContingencySettings, db: Session = Depends(get_db)):
     for key, value in [("contingency_pct", data.contingency_pct),
                        ("weekend_surcharge_pct", data.weekend_surcharge_pct)]:
-        result = await db.execute(select(AdminSetting).where(AdminSetting.key == key))
-        row = result.scalar_one_or_none()
+        row = db.execute(select(AdminSetting).where(AdminSetting.key == key)).scalar_one_or_none()
         if row:
             row.value = str(value)
         else:
             db.add(AdminSetting(key=key, value=str(value)))
-    await db.commit()
+    db.commit()
     return {**data.model_dump(), "updated_at": datetime.utcnow().isoformat() + "Z"}
 
 
 # ── Decor Images ───────────────────────────────────────────────────────────────
 @router.get("/decor-images", dependencies=[Depends(require_admin)])
-async def list_decor_images(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DecorImage).limit(50))
-    images = result.scalars().all()
+def list_decor_images(db: Session = Depends(get_db)):
+    images = db.execute(select(DecorImage).limit(50)).scalars().all()
     return {"images": [i.__dict__ for i in images], "total": len(images)}
 
 
@@ -265,15 +262,15 @@ def label_decor_image(body: DecorLabel):
 
 # ── POST /decor/retrain — retrain Decor ML model ──────────────────────────────
 @router.post("/decor/retrain")
-async def retrain_decor_model(
+def retrain_decor_model(
     _admin=Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     """Retrain the decor cost prediction model on all labelled images."""
     try:
         from ml.decor_model import DecorCostPredictor
         predictor = DecorCostPredictor()
-        result = await predictor.train(db)
+        result = predictor.train(db)
         return {"ok": True, **result}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))

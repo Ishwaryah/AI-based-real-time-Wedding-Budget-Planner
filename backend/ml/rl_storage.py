@@ -8,23 +8,22 @@ from datetime import datetime, timezone
 from typing import Dict
 
 from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 
 # ── Load ─────────────────────────────────────────────────────────────────────
 
-async def load_rl_state(db: AsyncSession) -> Dict[str, float]:
+def load_rl_state(db: Session) -> Dict[str, float]:
     """Return {category: multiplier} from rl_agent_state table."""
     from models import RLAgentState
-    result = await db.execute(select(RLAgentState))
-    rows   = result.scalars().all()
+    rows = db.execute(select(RLAgentState)).scalars().all()
     return {row.category: row.multiplier for row in rows}
 
 
-async def load_training_counts(db: AsyncSession) -> Dict[str, int]:
+def load_training_counts(db: Session) -> Dict[str, int]:
     """Return {category: count} from rl_training_log."""
     from models import RLTrainingLog
-    result = await db.execute(
+    result = db.execute(
         select(RLTrainingLog.category, func.count(RLTrainingLog.id).label("cnt"))
         .group_by(RLTrainingLog.category)
     )
@@ -33,26 +32,25 @@ async def load_training_counts(db: AsyncSession) -> Dict[str, int]:
 
 # ── Save ─────────────────────────────────────────────────────────────────────
 
-async def save_rl_state(db: AsyncSession, multipliers: Dict[str, float]) -> None:
+def save_rl_state(db: Session, multipliers: Dict[str, float]) -> None:
     """Upsert all multipliers into rl_agent_state."""
     from models import RLAgentState
     for category, multiplier in multipliers.items():
-        result = await db.execute(
+        row = db.execute(
             select(RLAgentState).where(RLAgentState.category == category)
-        )
-        row = result.scalar_one_or_none()
+        ).scalar_one_or_none()
         if row is None:
             db.add(RLAgentState(category=category, multiplier=multiplier))
         else:
-            row.multiplier  = multiplier
-            row.updated_at  = datetime.now(timezone.utc)
-    await db.commit()
+            row.multiplier = multiplier
+            row.updated_at = datetime.now(timezone.utc)
+    db.commit()
 
 
 # ── Log ──────────────────────────────────────────────────────────────────────
 
-async def log_update(
-    db: AsyncSession,
+def log_update(
+    db: Session,
     category:      str,
     estimated:     float,
     actual:        float,
@@ -73,15 +71,15 @@ async def log_update(
         accuracy_delta = accuracy_delta,
         timestamp      = datetime.now(timezone.utc),
     ))
-    await db.commit()
+    db.commit()
 
 
 # ── Accuracy stats ────────────────────────────────────────────────────────────
 
-async def get_accuracy_stats(db: AsyncSession) -> dict:
+def get_accuracy_stats(db: Session) -> dict:
     """Return aggregate accuracy stats from rl_training_log."""
     from models import RLTrainingLog
-    result = await db.execute(
+    result = db.execute(
         select(
             RLTrainingLog.category,
             func.count(RLTrainingLog.id).label("samples"),
@@ -99,6 +97,6 @@ async def get_accuracy_stats(db: AsyncSession) -> dict:
 
     total_samples = sum(v["samples"] for v in categories.values())
     return {
-        "categories":     categories,
-        "total_samples":  total_samples,
+        "categories":    categories,
+        "total_samples": total_samples,
     }

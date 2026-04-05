@@ -9,15 +9,16 @@ IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dat
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
 
 
-async def import_images():
-    from database import AsyncSessionLocal
+def import_images():
+    from database import SessionLocal
     from models import DecorImage
     from sqlalchemy import select
 
     if not os.path.isdir(IMAGES_DIR):
         return
 
-    async with AsyncSessionLocal() as db:
+    db = SessionLocal()
+    try:
         inserted = 0
         for subfolder in os.listdir(IMAGES_DIR):
             subfolder_path = os.path.join(IMAGES_DIR, subfolder)
@@ -28,12 +29,11 @@ async def import_images():
                 ext = os.path.splitext(fname)[1].lower()
                 if ext not in IMAGE_EXTENSIONS:
                     continue
-                # Use subfolder/filename as unique filename to avoid collisions
                 unique_filename = f"{subfolder}/{fname}"
-                result = await db.execute(
+                existing = db.execute(
                     select(DecorImage).where(DecorImage.filename == unique_filename)
-                )
-                if result.scalar_one_or_none() is not None:
+                ).scalar_one_or_none()
+                if existing is not None:
                     continue
                 img = DecorImage(
                     filename=unique_filename,
@@ -43,16 +43,16 @@ async def import_images():
                 db.add(img)
                 inserted += 1
 
-        await db.commit()
+        db.commit()
         if inserted:
             import logging
             logging.info(f"import_images: inserted {inserted} new decor images")
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
-    import asyncio
-    from database import init_db
-    async def main():
-        await init_db()
-        await import_images()
-        print("Done!")
-    asyncio.run(main())
+    from database import create_all
+    create_all()
+    import_images()
+    print("Done!")

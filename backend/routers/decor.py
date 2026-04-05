@@ -7,7 +7,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -58,13 +58,13 @@ def _ml_predict(image_path: str, function_type=None, style=None, complexity=None
 
 # ── GET /library ───────────────────────────────────────────────────────────────
 @router.get("/library")
-async def get_library(
+def get_library(
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     function_type: Optional[str] = None,
     style: Optional[str] = None,
     is_labelled: Optional[bool] = None,
-    db: AsyncSession = Depends(get_db),
+    db: Session = Depends(get_db),
 ):
     q = select(DecorImage)
     if function_type:
@@ -75,12 +75,10 @@ async def get_library(
         q = q.where(DecorImage.is_labelled == is_labelled)
 
     count_q = select(func.count()).select_from(q.subquery())
-    total_result = await db.execute(count_q)
-    total = total_result.scalar() or 0
+    total = db.execute(count_q).scalar() or 0
 
     q = q.offset((page - 1) * limit).limit(limit)
-    result = await db.execute(q)
-    images = result.scalars().all()
+    images = db.execute(q).scalars().all()
 
     if not images and page == 1:
         # Return hardcoded fallback so UI never breaks
@@ -119,9 +117,8 @@ class PredictByIdRequest(BaseModel):
 
 
 @router.post("/predict")
-async def predict_by_id(req: PredictByIdRequest, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(DecorImage).where(DecorImage.id == req.image_id))
-    img = result.scalar_one_or_none()
+def predict_by_id(req: PredictByIdRequest, db: Session = Depends(get_db)):
+    img = db.execute(select(DecorImage).where(DecorImage.id == req.image_id)).scalar_one_or_none()
     if not img:
         raise HTTPException(status_code=404, detail="Image not found")
 
@@ -138,7 +135,7 @@ async def predict_upload(
     style: Optional[str] = None,
     complexity: Optional[int] = None,
 ):
-    contents = await file.read()
+    contents = await file.read()  # must be async for UploadFile
     with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp:
         tmp.write(contents)
         tmp_path = tmp.name
