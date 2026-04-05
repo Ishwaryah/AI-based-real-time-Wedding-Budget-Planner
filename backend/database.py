@@ -4,8 +4,8 @@ Uses PostgreSQL when DATABASE_URL is set (production on Render),
 falls back to SQLite for local development.
 """
 import os
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
-from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
 # ── Engine setup ───────────────────────────────────────────────────────────────
 _DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -25,7 +25,7 @@ else:
         connect_args={"check_same_thread": False},
     )
 
-AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 # ── Base class ─────────────────────────────────────────────────────────────────
