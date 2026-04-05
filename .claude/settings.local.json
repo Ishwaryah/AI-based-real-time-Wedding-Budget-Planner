@@ -16,7 +16,8 @@
       "Bash(powershell -NonInteractive -Command ':*)",
       "Bash(.venv/Scripts/python.exe -m uvicorn main:app --port 8001)",
       "Bash(curl -s -X POST http://localhost:8001/api/decor/predict-legacy -H 'Content-Type: application/json' -d '{\"function_type\":\"Mandap\",\"style\":\"Romantic\",\"complexity\":\"High\",\"image_seed\":42}')",
-      "Bash(python -c \"import os; print\\(len\\(os.listdir\\('decor_dataset/data/images'\\)\\)\\)\")"
+      "Bash(python -c \"import os; print\\(len\\(os.listdir\\('decor_dataset/data/images'\\)\\)\\)\")",
+      "Bash(python -c \"from routers import budget, decor, admin\")"
     ]
   }
 }
