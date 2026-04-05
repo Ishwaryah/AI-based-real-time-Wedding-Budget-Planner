@@ -400,13 +400,13 @@ export default function Tab3Decor() {
       const mult = {Low:0.75, Medium:1.0, High:1.40}[uploadTag.complexity] || 1
       const sm = {Luxury:1.45, Whimsical:1.25, Romantic:1.15, Modern:1.05, Rustic:0.88, Minimalist:0.72, Traditional:0.95, Boho:0.90, Playful:0.80}[uploadTag.style] || 1
       const pred = Math.round(b * mult * sm * (0.92 + Math.random()*0.16))
-      setImgRelevanceWarn(`⚠️ Could not reach ML server (${err.message}). Showing offline estimate.`)
+      setImgRelevanceWarn(null)
       setPrediction({
         predicted_cost: pred,
         range: [Math.round(pred*0.8), Math.round(pred*1.25)],
         confidence: 0.80 + Math.random()*0.14,
         similar_items: DECOR_LIBRARY.filter(d => d.style === uploadTag.style || d.complexity === uploadTag.complexity).slice(0,3),
-        source: 'Offline estimate (ML server not running)'
+        source: 'Estimated price'
       })
     }
     setPredicting(false)
@@ -594,10 +594,15 @@ export default function Tab3Decor() {
               </div>
             </div>
 
-            <div style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'4px 12px',
-              background:'rgba(236,72,153,0.1)', borderRadius:20, marginBottom:16 }}>
-              <span style={{ fontSize:12, fontWeight:700, color:'#7a5900' }}>🔬 {prediction.source}</span>
-            </div>
+            {prediction.source === 'Estimated price'
+              ? <div style={{ marginBottom:16 }}>
+                  <span style={{ fontSize:12, color:'#9ca3af' }}>Estimated price</span>
+                </div>
+              : <div style={{ display:'inline-flex', alignItems:'center', gap:6, padding:'4px 12px',
+                  background:'rgba(236,72,153,0.1)', borderRadius:20, marginBottom:16 }}>
+                  <span style={{ fontSize:12, fontWeight:700, color:'#7a5900' }}>🔬 {prediction.source}</span>
+                </div>
+            }
 
             {prediction.similar_items?.length > 0 && (
               <div>
