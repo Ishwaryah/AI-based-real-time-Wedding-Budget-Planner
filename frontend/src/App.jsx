@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import ErrorBoundary from './components/ErrorBoundary'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WeddingProvider, useWedding } from './context/WeddingContext'
 import LandingPage from './pages/LandingPage'
@@ -466,8 +467,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <WeddingProvider>
-      <AppInner />
-    </WeddingProvider>
+    <ErrorBoundary>
+      <WeddingProvider>
+        <AppInner />
+      </WeddingProvider>
+    </ErrorBoundary>
   )
 }
