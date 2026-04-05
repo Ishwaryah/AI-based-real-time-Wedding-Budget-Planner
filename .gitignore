@@ -7,3 +7,5 @@ dist/
 *.joblib
 embeddings.json
 backend/.venv/
+*.db
+backend/data/*.db
