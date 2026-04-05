@@ -324,6 +324,7 @@ export const initialWeddingState = {
   // Tab 3
   decor_total: 0,
   selected_decor: [],
+  decor_selections: [],
   // Tab 4 – Food
   food_categories: [],
   food_budget_tier: '',
@@ -373,8 +374,12 @@ export function WeddingProvider({ children }) {
     setWedding(prev => ({ ...prev, ...updates }))
   }, [])
 
+  const updateDecorSelections = useCallback((selections, total) => {
+    setWedding(prev => ({ ...prev, decor_selections: selections, decor_total: total }))
+  }, [])
+
   return (
-    <WeddingContext.Provider value={{ wedding, update, updateMany }}>
+    <WeddingContext.Provider value={{ wedding, update, updateMany, updateDecorSelections }}>
       {children}
     </WeddingContext.Provider>
   )

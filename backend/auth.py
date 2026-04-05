@@ -16,8 +16,19 @@ ACCESS_TOKEN_EXPIRE_HOURS = 24
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
 # Store hashed password; default plain: shaadi@admin2026
 _pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-_DEFAULT_HASH = _pwd_ctx.hash("shaadi@admin2026")
-ADMIN_PASSWORD_HASH = os.environ.get("ADMIN_PASSWORD_HASH", _DEFAULT_HASH)
+
+# Cache for lazily computed hash
+_default_hash_cache = None
+
+def _get_admin_password_hash():
+    global _default_hash_cache
+    if _default_hash_cache is None:
+        env_hash = os.environ.get("ADMIN_PASSWORD_HASH")
+        if env_hash:
+            _default_hash_cache = env_hash
+        else:
+            _default_hash_cache = _pwd_ctx.hash("shaadi@admin2026")
+    return _default_hash_cache
 
 bearer_scheme = HTTPBearer()
 
@@ -35,7 +46,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 
 def authenticate_admin(username: str, password: str) -> bool:
-    return username == ADMIN_USERNAME and verify_password(password, ADMIN_PASSWORD_HASH)
+    return username == ADMIN_USERNAME and verify_password(password, _get_admin_password_hash())
 
 
 # ── FastAPI dependency ─────────────────────────────────────────────────────────

@@ -144,7 +144,7 @@ async def seed():
             db.add_all([AdminSetting(key=k, value=v) for k, v in ADMIN_SETTINGS])
 
         await db.commit()
-        print("✓ Seed data inserted.")
+        print("[OK] Seed data inserted.")
 
 
 if __name__ == "__main__":

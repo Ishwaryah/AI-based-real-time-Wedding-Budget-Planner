@@ -126,8 +126,10 @@ export default function Tab2Venue() {
           label="Wedding Location" wedding={wedding} update={update}
           onDistrictSelect={() => scrollToNextSection('wedding-city', 420)} />
         {wedding.wedding_district && (
-          <div style={{ marginTop: 12, padding: '8px 14px', background: C.light,
-            borderRadius: 10, fontSize: 13, color: C.primary, fontWeight: 600, display: 'inline-flex', gap: 8 }}>
+          <div style={{
+            marginTop: 12, padding: '8px 14px', background: C.light,
+            borderRadius: 10, fontSize: 13, color: C.primary, fontWeight: 600, display: 'inline-flex', gap: 8
+          }}>
             📍 {wedding.wedding_district}, {wedding.wedding_state}
           </div>
         )}
@@ -159,8 +161,10 @@ export default function Tab2Venue() {
                   value={wedding.num_days || 1}
                   onChange={e => update('num_days', parseInt(e.target.value) || 1)} />
               </div>
-              <div style={{ padding: '12px 16px', background: '#fff8e1',
-                borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{
+                padding: '12px 16px', background: '#fff8e1',
+                borderRadius: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+              }}>
                 <div>
                   <span style={{ fontWeight: 600, color: C.primary }}>Mandapam Total Cost</span>
                   <div style={{ fontSize: 11, color: '#7a5900', marginTop: 2 }}>
@@ -177,24 +181,30 @@ export default function Tab2Venue() {
           {mapsUrl && (
             <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
               <a href={mapsUrl} target="_blank" rel="noopener noreferrer"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '8px 16px', background: C.light, borderRadius: 10,
                   color: C.primary, fontWeight: 600, fontSize: 13, textDecoration: 'none',
-                  border: `1.5px solid ${C.sky}` }}>
+                  border: `1.5px solid ${C.sky}`
+                }}>
                 🗺️ Find more venues on Google Maps
               </a>
               <button onClick={() => setShowCustomForm(v => !v)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
                   padding: '8px 16px', background: '#fffbea', borderRadius: 10,
                   color: '#7a5900', fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                  border: `1.5px solid ${C.amber}` }}>
+                  border: `1.5px solid ${C.amber}`
+                }}>
                 {showCustomForm ? '✕ Cancel' : '+ Add Venue from Maps'}
               </button>
             </div>
           )}
           {showCustomForm && (
-            <div style={{ marginTop: 14, padding: '16px 18px', background: '#fffbea',
-              borderRadius: 12, border: `1.5px solid ${C.amber}` }}>
+            <div style={{
+              marginTop: 14, padding: '16px 18px', background: '#fffbea',
+              borderRadius: 12, border: `1.5px solid ${C.amber}`
+            }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: C.primary, marginBottom: 12 }}>
                 Add Custom Venue Found on Google Maps
               </div>
@@ -236,10 +246,12 @@ export default function Tab2Venue() {
                   setShowCustomForm(false)
                   setCustomVenue({ name: '', area: '', capacity: '', cost_per_day: '' })
                 }}
-                style={{ marginTop: 12, padding: '10px 22px', borderRadius: 10, border: 'none',
+                style={{
+                  marginTop: 12, padding: '10px 22px', borderRadius: 10, border: 'none',
                   background: customVenue.name && customVenue.cost_per_day
                     ? 'linear-gradient(135deg,#ffb703,#fb8500)' : '#ccc',
-                  color: '#023047', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                  color: '#023047', fontWeight: 700, fontSize: 13, cursor: 'pointer'
+                }}>
                 ✓ Use This Venue
               </button>
             </div>
@@ -261,19 +273,23 @@ export default function Tab2Venue() {
                 style={{ flex: 1, accentColor: '#D4537E', cursor: 'pointer' }} />
               <input type="number" value={wedding.total_guests || ''}
                 onChange={e => update('total_guests', parseInt(e.target.value) || 0)}
-                style={{ width: 80, textAlign: 'center', padding: '6px 8px',
+                style={{
+                  width: 80, textAlign: 'center', padding: '6px 8px',
                   border: '1.5px solid #EBEBEB', borderRadius: 8, fontSize: 14,
-                  fontFamily: 'inherit' }} />
+                  fontFamily: 'inherit'
+                }} />
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
               {[100, 200, 300, 500, 750, 1000].map(n => {
                 const sel = wedding.total_guests === n
                 return (
                   <button key={n} onClick={() => update('total_guests', n)}
-                    style={{ padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    style={{
+                      padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
                       cursor: 'pointer', border: `1.5px solid ${sel ? '#D4537E' : '#EBEBEB'}`,
                       background: sel ? '#FDF2F8' : 'white', color: sel ? '#D4537E' : '#555',
-                      transition: 'all 0.15s' }}>
+                      transition: 'all 0.15s'
+                    }}>
                     {n}
                   </button>
                 )
@@ -282,8 +298,8 @@ export default function Tab2Venue() {
             <div style={{ fontSize: 12, color: '#D4537E', fontWeight: 600 }}>
               {(wedding.total_guests || 0) < 150 ? '🌿 Intimate gathering'
                 : (wedding.total_guests || 0) < 400 ? '✨ Mid-size wedding'
-                : (wedding.total_guests || 0) < 700 ? '💐 Large wedding'
-                : '👑 Grand wedding'}
+                  : (wedding.total_guests || 0) < 700 ? '💐 Large wedding'
+                    : '👑 Grand wedding'}
             </div>
           </div>
           <div style={{ background: '#f0fdfa', borderRadius: 12, padding: 16 }}>
@@ -312,8 +328,10 @@ export default function Tab2Venue() {
               {wedding.events.map(ev => {
                 const evObj = ALL_EVENTS.find(e => e.id === ev)
                 return (
-                  <div key={ev} style={{ background: 'white', borderRadius: 12, padding: '12px 14px',
-                    border: `1.5px solid ${C.sky}` }}>
+                  <div key={ev} style={{
+                    background: 'white', borderRadius: 12, padding: '12px 14px',
+                    border: `1.5px solid ${C.sky}`
+                  }}>
                     <div style={{ fontSize: 20, marginBottom: 4 }}>{evObj?.emoji}</div>
                     <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 8, color: C.primary }}>{ev}</div>
                     <input type="number" className="form-input" style={{ padding: '7px 10px', fontSize: 13 }}
@@ -337,8 +355,10 @@ export default function Tab2Venue() {
           onChange={(v) => { update('hotel_tier', v); scrollToNextSection('accommodation', 420) }} showCost />
 
         {wedding.hotel_tier && (wedding.outstation_guests || 0) > 0 && (
-          <div style={{ marginTop: 16, padding: '14px 18px', background: '#e8f8f5',
-            borderRadius: 12, border: `1.5px solid #6EE7B7` }}>
+          <div style={{
+            marginTop: 16, padding: '14px 18px', background: '#e8f8f5',
+            borderRadius: 12, border: `1.5px solid #6EE7B7`
+          }}>
             <div style={{ fontWeight: 700, color: '#065F46', fontSize: 14, marginBottom: 10 }}>
               🏨 Rooms Calculation
             </div>
@@ -355,9 +375,11 @@ export default function Tab2Venue() {
                       update('num_rooms', parseInt(e.target.value) || autoRooms)
                       update('num_rooms_override', true)
                     }}
-                    style={{ width: 80, padding: '6px 10px', border: `2px solid ${C.amber}`,
+                    style={{
+                      width: 80, padding: '6px 10px', border: `2px solid ${C.amber}`,
                       borderRadius: 8, fontSize: 14, fontWeight: 700, textAlign: 'center',
-                      fontFamily: 'Inter, sans-serif' }} />
+                      fontFamily: 'Inter, sans-serif'
+                    }} />
                   {wedding.num_rooms_override && (
                     <button onClick={() => { update('num_rooms_override', false); update('num_rooms', autoRooms) }}
                       style={{ fontSize: 11, color: C.blue, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
