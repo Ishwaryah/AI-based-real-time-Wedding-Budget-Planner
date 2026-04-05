@@ -17,6 +17,13 @@ async def lifespan(app: FastAPI):
     from ml.import_images import import_images as _import_images
     await _import_images()
 
+    # Auto-label images if fewer than 50 labels exist
+    try:
+        from ml.auto_label import maybe_auto_label
+        await maybe_auto_label()
+    except Exception as exc:
+        pass  # non-fatal
+
     import logging
 
     # Load RL Budget Agent

@@ -1,4 +1,5 @@
-"""Decor cost prediction model: ML (RandomForest) or rule-based fallback."""
+"""Decor cost prediction model: GradientBoosting + StandardScaler, or rule-based fallback."""
+import csv
 import os
 import warnings
 import numpy as np
@@ -15,8 +16,10 @@ def _get_mobilenet():
         _mobilenet = MobileNetV2(weights='imagenet')
     return _mobilenet
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "decor_model.pkl")
-IMAGES_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "images")
+
+MODEL_PATH  = os.path.join(os.path.dirname(__file__), "decor_model.pkl")
+IMAGES_DIR  = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "images")
+LABELS_CSV  = os.path.join(os.path.dirname(os.path.dirname(__file__)), "decor_dataset", "data", "labels.csv")
 
 # Rule-based cost ranges (INR) by complexity 1-5
 RULE_RANGES = {
@@ -28,14 +31,27 @@ RULE_RANGES = {
 }
 
 
+def _read_labels() -> dict:
+    """Return dict of {filename: {function_type, style, complexity, seed_cost}}."""
+    labels = {}
+    if not os.path.exists(LABELS_CSV):
+        return labels
+    with open(LABELS_CSV, newline="", encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            labels[row["filename"]] = row
+    return labels
+
+
 class DecorCostPredictor:
     def __init__(self):
-        self.model_mid = None
-        self.model_low = None
+        self.model_mid  = None
+        self.model_low  = None
         self.model_high = None
+        self.scaler: object = None
         self.function_types: list = []
         self.styles: list = []
         self.n_samples: int = 0
+        self.cv_score: float | None = None
         self._try_load()
 
     def _try_load(self):
@@ -43,97 +59,121 @@ class DecorCostPredictor:
             try:
                 import joblib
                 data = joblib.load(MODEL_PATH)
-                self.model_mid = data["model_mid"]
-                self.model_low = data["model_low"]
-                self.model_high = data["model_high"]
+                self.model_mid      = data["model_mid"]
+                self.model_low      = data["model_low"]
+                self.model_high     = data["model_high"]
+                self.scaler         = data.get("scaler")
                 self.function_types = data["function_types"]
-                self.styles = data["styles"]
-                self.n_samples = data["n_samples"]
+                self.styles         = data["styles"]
+                self.n_samples      = data["n_samples"]
+                self.cv_score       = data.get("cv_score")
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).warning("Failed to load decor model, deleting pkl: %s", e)
                 self.model_mid = None
-                self.model_low = None
-                self.model_high = None
                 try:
                     os.remove(MODEL_PATH)
                 except OSError:
                     pass
 
-    async def train(self, db_session) -> dict:
-        """Train on all labelled DecorImages; save model to disk.
+    async def train(self, db_session=None) -> dict:
+        """Train on all labelled images from labels.csv.
 
-        Returns a dict with keys: method, samples, accuracy.
+        Returns a dict with keys: method, samples, accuracy, cv_score.
         Falls back to rule-based if < 5 labelled images.
         """
         import joblib
-        from sqlalchemy import select
-        from models import DecorImage
         from ml.decor_features import extract_features
-        from sklearn.ensemble import RandomForestRegressor
-        from sklearn.model_selection import train_test_split
+        from sklearn.ensemble import GradientBoostingRegressor
+        from sklearn.model_selection import train_test_split, cross_val_score
+        from sklearn.preprocessing import StandardScaler
 
-        result = await db_session.execute(
-            select(DecorImage).where(DecorImage.is_labelled == True)  # noqa: E712
-        )
-        images = result.scalars().all()
+        labels = _read_labels()
 
-        if len(images) < 5:
-            return {"method": "rule-based", "samples": len(images), "accuracy": None}
+        if len(labels) < 5:
+            return {"method": "rule-based", "samples": len(labels), "accuracy": None, "cv_score": None}
 
-        function_types = sorted({img.function_type for img in images if img.function_type})
-        styles = sorted({img.style for img in images if img.style})
+        function_types = sorted({row["function_type"] for row in labels.values() if row.get("function_type")})
+        styles         = sorted({row["style"]         for row in labels.values() if row.get("style")})
 
         X_list, y_list = [], []
-        for img in images:
-            img_path = os.path.join(IMAGES_DIR, img.filename)
-            feats = extract_features(img_path)
-            ft_vec = [1.0 if img.function_type == ft else 0.0 for ft in function_types]
-            st_vec = [1.0 if img.style == s else 0.0 for s in styles]
-            comp = (img.complexity or 3) / 5.0
+        for filename, row in labels.items():
+            img_path = os.path.join(IMAGES_DIR, filename)
+            if not os.path.exists(img_path):
+                continue
+            feats  = extract_features(img_path)
+            ft_vec = [1.0 if row.get("function_type") == ft else 0.0 for ft in function_types]
+            st_vec = [1.0 if row.get("style") == s else 0.0 for s in styles]
+            comp   = (int(row.get("complexity") or 3)) / 5.0
             X_list.append(np.concatenate([feats, ft_vec, st_vec, [comp]]))
-            y_list.append(float(img.seed_cost or 0))
+            y_list.append(float(row.get("seed_cost") or 0))
+
+        if len(X_list) < 5:
+            return {"method": "rule-based", "samples": len(X_list), "accuracy": None, "cv_score": None}
 
         X = np.array(X_list)
         y = np.array(y_list)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        # Normalise features
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(X)
 
-        model_mid = RandomForestRegressor(n_estimators=100, random_state=42)
+        X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
+
+        gb_params = dict(n_estimators=200, learning_rate=0.05, max_depth=4,
+                         subsample=0.8, random_state=42)
+
+        model_mid  = GradientBoostingRegressor(**gb_params)
         model_mid.fit(X_train, y_train)
 
-        model_low = RandomForestRegressor(n_estimators=100, random_state=42)
+        model_low  = GradientBoostingRegressor(**gb_params)
         model_low.fit(X_train, y_train * 0.8)
 
-        model_high = RandomForestRegressor(n_estimators=100, random_state=42)
+        model_high = GradientBoostingRegressor(**gb_params)
         model_high.fit(X_train, y_train * 1.3)
 
-        score = float(model_mid.score(X_test, y_test))
+        test_score = float(model_mid.score(X_test, y_test))
 
-        self.model_mid = model_mid
-        self.model_low = model_low
-        self.model_high = model_high
+        # Cross-validation on full scaled dataset
+        cv_scores  = cross_val_score(
+            GradientBoostingRegressor(**gb_params), X_scaled, y,
+            cv=min(5, len(X_list)), scoring="r2"
+        )
+        cv_score = float(cv_scores.mean())
+
+        self.model_mid      = model_mid
+        self.model_low      = model_low
+        self.model_high     = model_high
+        self.scaler         = scaler
         self.function_types = function_types
-        self.styles = styles
-        self.n_samples = len(images)
+        self.styles         = styles
+        self.n_samples      = len(X_list)
+        self.cv_score       = cv_score
 
         if os.path.exists(MODEL_PATH):
             os.remove(MODEL_PATH)
 
         joblib.dump(
             {
-                "model_mid": model_mid,
-                "model_low": model_low,
-                "model_high": model_high,
+                "model_mid":      model_mid,
+                "model_low":      model_low,
+                "model_high":     model_high,
+                "scaler":         scaler,
                 "function_types": function_types,
-                "styles": styles,
-                "n_samples": len(images),
+                "styles":         styles,
+                "n_samples":      len(X_list),
+                "cv_score":       cv_score,
             },
             MODEL_PATH,
             protocol=4,
         )
 
-        return {"method": "ml", "samples": len(images), "accuracy": round(score, 3)}
+        return {
+            "method":   "ml",
+            "samples":  len(X_list),
+            "accuracy": round(test_score, 3),
+            "cv_score": round(cv_score, 3),
+        }
 
     def _is_decor_image(self, image_path: str) -> tuple[bool, str]:
         """Return (is_valid, reason). Rejects non-decor images via heuristics."""
@@ -141,12 +181,11 @@ class DecorCostPredictor:
             from ml.decor_features import extract_features
             feats = extract_features(image_path)
             # feats indices: 9=brightness, 10=complexity_score, 11=color_variance, 12=warm_ratio
-            brightness = feats[9]
+            brightness       = feats[9]
             complexity_score = feats[10]
-            color_variance = feats[11]
-            warm_ratio = feats[12]
+            color_variance   = feats[11]
+            warm_ratio       = feats[12]
 
-            # Likely a skin-tone / portrait: warm, bright, low complexity
             if warm_ratio > 0.55 and brightness > 0.55 and complexity_score < 0.18:
                 return False, "skin-tone"
             if complexity_score < 0.05:
@@ -168,16 +207,23 @@ class DecorCostPredictor:
             arr = preprocess_input(
                 np.array(img.resize((224, 224)).convert('RGB'))[np.newaxis]
             )
-            top = decode_predictions(_get_mobilenet().predict(arr, verbose=0), top=5)[0]
+            top    = decode_predictions(_get_mobilenet().predict(arr, verbose=0), top=5)[0]
             labels = [l.lower() for _, l, _ in top]
             scores = [float(s) for _, _, s in top]
-            is_decor = any(k in l for k in DECOR for l in labels)
+            is_decor  = any(k in l for k in DECOR for l in labels)
             is_reject = any(k in l for k in REJECT for l in labels)
             if is_reject and not is_decor:
                 return False, 0
             return True, min(round(scores[0] * 100 + 50, 1), 95)
         except Exception:
             return True, 50
+
+    def _prediction_confidence(self) -> float:
+        """Confidence based on sample size and cross-validation score."""
+        base = 0.55 + min(self.n_samples / 300.0, 0.30)
+        if self.cv_score is not None and self.cv_score > 0:
+            base = base * 0.5 + self.cv_score * 0.5
+        return round(min(base, 0.95), 2)
 
     def predict(self, image_path: str, function_type=None, style=None, complexity=None) -> dict:
         """Return cost prediction dict.
@@ -189,33 +235,36 @@ class DecorCostPredictor:
         is_valid, confidence = self._validate_image_strict(img)
         if not is_valid:
             return {
-                "predicted_low": 0,
-                "predicted_mid": 0,
+                "predicted_low":  0,
+                "predicted_mid":  0,
                 "predicted_high": 0,
-                "confidence": 0,
-                "method": "rejected",
-                "message": "Please upload a wedding decor image",
+                "confidence":     0,
+                "method":         "rejected",
+                "message":        "Please upload a wedding decor image",
             }
 
         if self.model_mid is not None:
             from ml.decor_features import extract_features
 
-            feats = extract_features(image_path)
+            feats  = extract_features(image_path)
             ft_vec = [1.0 if function_type == ft else 0.0 for ft in self.function_types]
             st_vec = [1.0 if style == s else 0.0 for s in self.styles]
-            comp = (int(complexity) if complexity is not None else 3) / 5.0
-            x = np.concatenate([feats, ft_vec, st_vec, [comp]]).reshape(1, -1)
+            comp   = (int(complexity) if complexity is not None else 3) / 5.0
+            x_raw  = np.concatenate([feats, ft_vec, st_vec, [comp]]).reshape(1, -1)
 
-            mid = int(self.model_mid.predict(x)[0])
-            low = int(self.model_low.predict(x)[0])
+            x = self.scaler.transform(x_raw) if self.scaler is not None else x_raw
+
+            mid  = int(self.model_mid.predict(x)[0])
+            low  = int(self.model_low.predict(x)[0])
             high = int(self.model_high.predict(x)[0])
-            confidence = round(min(0.95, 0.60 + self.n_samples / 200.0), 2)
+
             return {
-                "predicted_low": low,
-                "predicted_mid": mid,
+                "predicted_low":  low,
+                "predicted_mid":  mid,
                 "predicted_high": high,
-                "confidence": confidence,
-                "method": "ml",
+                "confidence":     self._prediction_confidence(),
+                "method":         "ml",
+                "cv_score":       self.cv_score,
             }
 
         # Rule-based fallback
@@ -224,11 +273,11 @@ class DecorCostPredictor:
         low, high = RULE_RANGES[c]
         mid = (low + high) // 2
         return {
-            "predicted_low": low,
-            "predicted_mid": mid,
+            "predicted_low":  low,
+            "predicted_mid":  mid,
             "predicted_high": high,
-            "confidence": 0.50,
-            "method": "rule-based",
+            "confidence":     0.50,
+            "method":         "rule-based",
         }
 
 
