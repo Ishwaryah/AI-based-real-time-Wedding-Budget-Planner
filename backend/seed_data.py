@@ -2,7 +2,7 @@
 import asyncio
 from sqlalchemy import select, func
 from database import AsyncSessionLocal, create_all
-from models import Artist, FBRate, LogisticsCost, AdminSetting
+from models import Artist, FBRate, LogisticsCost, AdminSetting, RLTrainingLog
 
 
 ARTISTS = [
@@ -108,6 +108,31 @@ LOGISTICS = [
     ("Default",   "transfer_per_trip",  3500),
 ]
 
+# RL training samples: (category, estimated, actual)
+# 5 categories × 3 samples each = 15 total
+RL_TRAINING_SAMPLES = [
+    # Venue — actual tends to run over estimate
+    ("Venue",                    800000,   920000),
+    ("Venue",                   1200000,  1350000),
+    ("Venue",                    500000,   580000),
+    # Food & Beverages — slight under-estimate
+    ("Food & Beverages",         600000,   670000),
+    ("Food & Beverages",        1000000,  1120000),
+    ("Food & Beverages",         400000,   440000),
+    # Decor & Design — often over-budget
+    ("Decor & Design",           350000,   420000),
+    ("Decor & Design",           700000,   810000),
+    ("Decor & Design",           200000,   230000),
+    # Artists & Entertainment — fairly accurate
+    ("Artists & Entertainment",  300000,   290000),
+    ("Artists & Entertainment",  800000,   780000),
+    ("Artists & Entertainment",  150000,   160000),
+    # Logistics & Transport — slight under
+    ("Logistics & Transport",     80000,    95000),
+    ("Logistics & Transport",    120000,   140000),
+    ("Logistics & Transport",     50000,    58000),
+]
+
 ADMIN_SETTINGS = [
     ("contingency_pct",       "0.08"),
     ("weekend_surcharge_pct", "0.15"),
@@ -145,6 +170,24 @@ async def seed():
 
         await db.commit()
         print("[OK] Seed data inserted.")
+
+    # RL training — run outside the main session so each update can commit its own state
+    count = 0
+    async with AsyncSessionLocal() as db:
+        count = (await db.execute(select(func.count()).select_from(RLTrainingLog))).scalar()
+
+    if count == 0:
+        from ml.rl_agent import get_rl_agent
+        agent = get_rl_agent()
+        async with AsyncSessionLocal() as db:
+            await agent.load_state(db)
+        for category, estimated, actual in RL_TRAINING_SAMPLES:
+            async with AsyncSessionLocal() as db:
+                await agent.update(category=category, estimated=estimated, actual=actual, db=db)
+                await db.commit()
+        print(f"[OK] RL agent seeded with {len(RL_TRAINING_SAMPLES)} training samples.")
+    else:
+        print(f"[--] RL training log already has {count} entries, skipping.")
 
 
 if __name__ == "__main__":
