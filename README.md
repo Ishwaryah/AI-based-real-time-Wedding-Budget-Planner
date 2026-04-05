@@ -87,9 +87,13 @@ weddingbudget.ai/
 
 **Terminal 1 — Backend**
 ```bash
+py -3.11 -m venv .venv
 cd backend
+py -3.11 -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 python ml/train.py
+pip install greenlet --force-reinstall
 python -m uvicorn main:app --reload --port 8000
 ```
 
