@@ -243,21 +243,10 @@ async def update_contingency(data: ContingencySettings, db: AsyncSession = Depen
 
 # ── Decor Images ───────────────────────────────────────────────────────────────
 @router.get("/decor-images", dependencies=[Depends(require_admin)])
-def list_decor_images():
-    labels = _read_labels()
-    images = []
-    if os.path.isdir(IMAGES_DIR):
-        for fname in sorted(os.listdir(IMAGES_DIR)):
-            if fname.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-                label = labels.get(fname, {})
-                images.append({
-                    "filename": fname,
-                    "function_type": label.get("function_type", ""),
-                    "style":         label.get("style", ""),
-                    "complexity":    int(label["complexity"]) if label.get("complexity") else None,
-                    "seed_cost":     float(label["seed_cost"]) if label.get("seed_cost") else None,
-                })
-    return {"images": images, "total": len(images)}
+async def list_decor_images(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(DecorImage).limit(50))
+    images = result.scalars().all()
+    return {"images": [i.__dict__ for i in images], "total": len(images)}
 
 
 @router.post("/decor-images/label", dependencies=[Depends(require_admin)])
