@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
+import { API_BASE } from '../utils/config'
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+const API = API_BASE
 const C = { navy: '#023047', amber: '#ffb703', blue: '#219ebc', sky: '#8ecae6', orange: '#fb8500', green: '#059669', red: '#DC2626' }
 
 // ── JWT helpers ────────────────────────────────────────────────────────────────
