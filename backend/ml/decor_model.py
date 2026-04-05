@@ -132,12 +132,44 @@ class DecorCostPredictor:
             pass
         return True, ""
 
+    def _validate_image_strict(self, image_path: str) -> tuple[bool, str]:
+        """Strict pixel-level validation. Returns (is_valid, reason)."""
+        try:
+            from PIL import Image
+
+            img = Image.open(image_path).convert("RGB")
+            img_small = img.resize((100, 100))
+            pixels = np.array(img_small, dtype=np.float32)  # (100,100,3)
+
+            r, g, b = pixels[:, :, 0], pixels[:, :, 1], pixels[:, :, 2]
+
+            # 1. Skin-tone check: R>150, G>100, B>80, R>G, R>B
+            skin_mask = (r > 150) & (g > 100) & (b > 80) & (r > g) & (r > b)
+            skin_tone_ratio = float(skin_mask.sum()) / skin_mask.size
+            if skin_tone_ratio > 0.4:
+                return False, "skin-tone"
+
+            # 2. Complexity check: std of all pixel values
+            complexity_score = float(pixels.std())
+            if complexity_score < 8:
+                return False, "plain"
+
+            # 3. Unique dominant colors (quantize to 8 colors)
+            img_q = img_small.quantize(colors=8)
+            unique_colors = len(set(img_q.getdata()))
+            if unique_colors < 3:
+                return False, "low-colors"
+
+        except Exception:
+            pass
+        return True, ""
+
     def predict(self, image_path: str, function_type=None, style=None, complexity=None) -> dict:
         """Return cost prediction dict.
 
         Uses ML model when trained, otherwise falls back to rule-based ranges.
         """
-        valid, reason = self._is_decor_image(image_path)
+        valid, reason = self._validate_image_strict(image_path)
         if not valid:
             return {
                 "predicted_low": 0,
@@ -145,7 +177,7 @@ class DecorCostPredictor:
                 "predicted_high": 0,
                 "confidence": 0,
                 "method": "rejected",
-                "message": "Please upload a decor/venue image",
+                "message": "Please upload a wedding decor image",
             }
 
         if self.model_mid is not None:

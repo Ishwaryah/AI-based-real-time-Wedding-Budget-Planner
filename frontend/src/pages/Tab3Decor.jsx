@@ -369,7 +369,7 @@ export default function Tab3Decor() {
       const d = await res.json()
       if (d.error) throw new Error(d.error)
       if (d.method === 'rejected') {
-        setImgRelevanceWarn('⚠️ Please upload a decoration image')
+        setImgRelevanceWarn('⚠️ Please upload a decor/venue image')
         setPrediction(null)
         setPredicting(false)
         setPredStep('')
