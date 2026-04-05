@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, validator, root_validator
 from typing import Optional
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -15,9 +15,9 @@ router = APIRouter()
 class ConfigPayload(BaseModel):
     data: dict
 
-    @model_validator(mode="after")
-    def validate_calculate_fields(self):
-        d = self.data
+    @root_validator(skip_on_failure=True)
+    def validate_calculate_fields(cls, values):
+        d = values.get("data") or {}
         guests = d.get("total_guests")
         if guests is not None:
             try:
@@ -34,7 +34,7 @@ class ConfigPayload(BaseModel):
                 raise ValueError("budget must be a number")
             if budget < 10000:
                 raise ValueError("budget must be at least 10000")
-        return self
+        return values
 
 class LogActualPayload(BaseModel):
     session_id: str
