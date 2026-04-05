@@ -14,20 +14,17 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 
 ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "shaadi@admin2026")
 # Store hashed password; default plain: shaadi@admin2026
 _pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# Cache for lazily computed hash
 _default_hash_cache = None
 
 def _get_admin_password_hash():
     global _default_hash_cache
     if _default_hash_cache is None:
-        env_hash = os.environ.get("ADMIN_PASSWORD_HASH")
-        if env_hash:
-            _default_hash_cache = env_hash
-        else:
-            _default_hash_cache = _pwd_ctx.hash("shaadi@admin2026")
+        pwd = ADMIN_PASSWORD[:72]
+        _default_hash_cache = _pwd_ctx.hash(pwd)
     return _default_hash_cache
 
 bearer_scheme = HTTPBearer()
