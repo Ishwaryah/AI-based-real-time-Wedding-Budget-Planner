@@ -8,6 +8,9 @@ import uvicorn, os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import logging
+    if not os.environ.get("DATABASE_URL"):
+        logging.warning("WARNING: No DATABASE_URL set, using SQLite fallback")
     # Create tables and seed data on startup
     from database import create_all as _create_all, AsyncSessionLocal
     from seed_data import seed as _seed
@@ -16,8 +19,6 @@ async def lifespan(app: FastAPI):
 
     from ml.import_images import import_images as _import_images
     await _import_images()
-
-    import logging
 
     # Auto-label with MobileNetV2+KMeans if < 200 labels, then retrain model
     try:
