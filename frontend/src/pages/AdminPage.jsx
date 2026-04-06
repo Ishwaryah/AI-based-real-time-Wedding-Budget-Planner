@@ -60,7 +60,7 @@ async function apiFetchBudget(path, opts = {}) {
     const err = await res.json().catch(() => ({ detail: 'Request failed' }))
     throw new Error(err.detail || `HTTP ${res.status}`)
   }
-  return res.json()
+  return await res.json().catch(() => ({}))
 }
 
 function formatRupees(value) {
@@ -572,7 +572,7 @@ function BudgetTrackerTab() {
     setStatus(null)
     setMessage(null)
     try {
-      const data = await apiFetchBudget('/budget/tracker-summary')
+      const data = await apiFetchBudget('/budget/tracker-summary') || {}
       setSummary(data)
       const inputs = {}
       (data.summary || []).forEach(row => {
@@ -600,7 +600,7 @@ function BudgetTrackerTab() {
     setMessage(null)
     setSaveState(prev => ({ ...prev, [trimmed]: 'saving' }))
     try {
-      const result = await apiFetchBudget('/budget/log-actual', {
+      const result = (await apiFetchBudget('/budget/log-actual', {
         method: 'POST',
         body: JSON.stringify({
           session_id: 'admin-panel',
@@ -608,7 +608,7 @@ function BudgetTrackerTab() {
           estimated: est,
           actual: act,
         }),
-      })
+      })) || {}
       setMessage(`${trimmed} updated. Accuracy improvement: ${result.accuracy_improvement >= 0 ? '+' : ''}${result.accuracy_improvement?.toFixed(1)}%`)
       setNewEntry({ category: '', estimated: '', actual: '' })
       await loadSummary()
@@ -645,7 +645,7 @@ function BudgetTrackerTab() {
             </tr>
           </thead>
           <tbody>
-            {(summary?.summary || []).length > 0 ? (summary.summary || []).map((row, index) => (
+            {(summary?.summary || []).length > 0 ? (summary?.summary || []).map((row, index) => (
               <tr key={row.category} style={{ background: index % 2 === 0 ? 'white' : '#f8fbff' }}>
                 <td style={{ padding: '10px 10px', fontWeight: 700 }}>{row.category}</td>
                 <td style={{ padding: '10px 10px', color: '#0f766e', fontWeight: 700 }}>{formatRupees(row.estimated)}</td>
