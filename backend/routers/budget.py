@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import Response
-from pydantic import BaseModel, validator, root_validator
+from pydantic import BaseModel
 from typing import Optional
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -175,8 +175,8 @@ def get_rl_multipliers(db: Session = Depends(get_db)):
 
 
 @router.post("/finalise")
-def finalise_budget(payload: Dict[str, Any] = {}):
-    return {"success": True, "message": "Budget finalised"}
+async def finalise_budget():
+    return {"success": True}
 
 @router.post("/export-pdf")
 async def export_pdf(request: Request):
