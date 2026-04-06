@@ -261,7 +261,14 @@ export default function Tab8Budget() {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ data: wedding })
       })
+      if (!budRes.ok) {
+        throw new Error(`API returned status ${budRes.status}`)
+      }
       const budData = await budRes.json()
+      // Check expected fields
+      if (!budData || !budData.total || typeof budData.total.mid === 'undefined') {
+        throw new Error('API response missing expected fields (total.mid)')
+      }
       setBudget(budData)
       // Fetch scenarios in parallel
       try {
@@ -270,10 +277,13 @@ export default function Tab8Budget() {
           body: JSON.stringify({ data: wedding })
         })
         setScenarios(await scenRes.json())
-      } catch {
+      } catch (err) {
+        console.error('Scenarios API failed:', err)
         setScenarios(null)
       }
-    } catch {
+    } catch (err) {
+      console.error('calculateBudget failed. Using offline estimate.', err)
+      showToast('Backend unavailable, using offline estimate', 'error')
       // Offline fallback
       const total_guests = wedding.total_guests || 200
       const events       = wedding.events || []
@@ -305,7 +315,7 @@ export default function Tab8Budget() {
       alert('Please enter a valid target budget (minimum ₹1 lakh)')
       return
     }
-    if (budget && targetBudget > budget.total.mid * 2) {
+    if (budget && targetBudget > (budget?.total?.mid || 0) * 2) {
       alert('Target budget seems too high. Please enter a realistic amount.')
       return
     }
@@ -318,13 +328,13 @@ export default function Tab8Budget() {
       })
       setOptimResult(await res.json())
     } catch {
-      const current = budget.total.mid
+      const current = (budget?.total?.mid || 0)
       const target  = parseFloat(targetBudget)
       const WEIGHTS = { 'Venue':0.25,'Food & Beverages':0.22,'Accommodation':0.15,'Decor & Design':0.18,'Artists & Entertainment':0.12,'Logistics & Transport':0.08 }
       const category_results = {}
       const recommendations  = []
       for (const [cat, w] of Object.entries(WEIGHTS)) {
-        const orig  = budget.items?.[cat]?.mid || 0
+        const orig  = (budget?.items?.[cat]?.mid || 0)
         const delta = Math.round((current - target) * w)
         const opt   = Math.max(0, orig - delta)
         const mult  = orig ? Math.round((opt / orig) * 100) / 100 : 1
@@ -363,11 +373,11 @@ export default function Tab8Budget() {
     const safeCity = escapeHTML(wedding.wedding_city || wedding.wedding_district || '—')
     const safeDate = escapeHTML(wedding.wedding_date || '—')
 
-    const conf = Math.round((budget.confidence_score||0.72)*100)
+    const conf = Math.round(((budget?.confidence_score || 0)||0.72)*100)
 
     // Build rows for the main table
-    const mainRows = Object.entries(budget.items||{}).map(([name,vals]) => {
-      const pct = budget.total.mid > 0 ? Math.round((vals.mid/budget.total.mid)*100) : 0
+    const mainRows = Object.entries((budget?.items || {})).map(([name,vals]) => {
+      const pct = (budget?.total?.mid || 0) > 0 ? Math.round((vals.mid/(budget?.total?.mid || 0))*100) : 0
       const subRows = (vals.sub_items||[]).filter(s=>s.mid||s.low||s.high).map(s =>
         `<tr style="color:#555;font-size:11px">
            <td style="padding:4px 12px 4px 28px">· ${escapeHTML(s.name)}</td>
@@ -376,7 +386,7 @@ export default function Tab8Budget() {
            <td style="text-align:right;padding:4px 8px">${R(s.high)||'—'}</td>
            <td></td></tr>`
       ).join('')
-      return `<tr style="background:${Object.keys(budget.items).indexOf(name)%2===0?'#f8f4ed':'white'}">
+      return `<tr style="background:${Object.keys((budget?.items || {})).indexOf(name)%2===0?'#f8f4ed':'white'}">
         <td style="padding:8px 12px;font-weight:700;display:flex;align-items:center;gap:6px">
           <span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${ITEM_COLORS[name]||'#888'}"></span>${escapeHTML(name)}
         </td>
@@ -390,7 +400,7 @@ export default function Tab8Budget() {
     // Scenario table rows
     const scenNames  = scenarios ? Object.keys(scenarios) : []
     const scenHdr    = scenNames.map(n => `<th style="background:#023047;color:white;padding:8px;text-align:right">${scenarios[n].icon} ${n}</th>`).join('')
-    const scenItems  = Object.keys(budget.items||{}).map(cat => {
+    const scenItems  = Object.keys((budget?.items || {})).map(cat => {
       const cells = scenNames.map(n => `<td style="text-align:right;padding:6px 10px">${R(scenarios?.[n]?.items?.[cat]?.mid||0)}</td>`).join('')
       return `<tr><td style="padding:6px 10px;font-weight:600">${cat}</td>${cells}</tr>`
     }).join('')
@@ -456,9 +466,9 @@ export default function Tab8Budget() {
     </div>
 
     <div class="summary-grid">
-      <div class="summary-card"><div class="label">Conservative (Low)</div><div class="amount">${R(budget.total.low)}</div></div>
-      <div class="summary-card" style="background:#FFF8E8"><div class="label">Most Likely (Mid)</div><div class="amount" style="color:#C9A84C;font-size:28px">${R(budget.total.mid)}</div></div>
-      <div class="summary-card"><div class="label">Premium (High)</div><div class="amount">${R(budget.total.high)}</div></div>
+      <div class="summary-card"><div class="label">Conservative (Low)</div><div class="amount">${R((budget?.total?.low || 0))}</div></div>
+      <div class="summary-card" style="background:#FFF8E8"><div class="label">Most Likely (Mid)</div><div class="amount" style="color:#C9A84C;font-size:28px">${R((budget?.total?.mid || 0))}</div></div>
+      <div class="summary-card"><div class="label">Premium (High)</div><div class="amount">${R((budget?.total?.high || 0))}</div></div>
     </div>
 
     <h2>Detailed Cost Breakdown — Every Rupee Itemised</h2>
@@ -473,9 +483,9 @@ export default function Tab8Budget() {
       <tbody>${mainRows}
         <tr class="total-row">
           <td>TOTAL ESTIMATE</td>
-          <td style="text-align:right">${R(budget.total.low)}</td>
-          <td style="text-align:right;color:#C9A84C;font-size:18px">${R(budget.total.mid)}</td>
-          <td style="text-align:right">${R(budget.total.high)}</td>
+          <td style="text-align:right">${R((budget?.total?.low || 0))}</td>
+          <td style="text-align:right;color:#C9A84C;font-size:18px">${R((budget?.total?.mid || 0))}</td>
+          <td style="text-align:right">${R((budget?.total?.high || 0))}</td>
           <td></td>
         </tr>
       </tbody>
@@ -535,7 +545,7 @@ export default function Tab8Budget() {
     }
   }
 
-  const pieItems = budget ? Object.entries(budget.items||{}).map(([name,vals]) => ({
+  const pieItems = budget ? Object.entries((budget?.items || {})).map(([name,vals]) => ({
     label: name, value: vals.mid||0, color: ITEM_COLORS[name]||'#888'
   })).filter(i=>i.value>0) : []
 
@@ -590,7 +600,7 @@ export default function Tab8Budget() {
 
         {/* ── Confidence ── */}
         <div className="section-card">
-          <ConfidenceBar score={budget.confidence_score||0.72} />
+          <ConfidenceBar score={(budget?.confidence_score || 0)||0.72} />
         </div>
 
         {/* ── RL Stats Card ── */}
@@ -601,7 +611,7 @@ export default function Tab8Budget() {
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
             <span style={{ fontSize:22 }}></span>
             <span style={{ fontWeight:800, fontSize:15, color:'#3730A3' }}>Learning Budget AI</span>
-            {budget.rl_active && (
+            {(budget?.rl_active || false) && (
               <span style={{ fontSize:11, background:'#4F46E5', color:'#fff',
                 padding:'2px 8px', borderRadius:20, fontWeight:700 }}>ACTIVE</span>
             )}
@@ -664,13 +674,13 @@ export default function Tab8Budget() {
             ₹{(displayTotal/100000).toFixed(1)}L
           </div>
           <div style={{ fontSize:12, color:'rgba(255,255,255,0.5)', marginTop:8 }}>
-            {formatRupees(budget.total.low)} – {formatRupees(budget.total.high)} range
+            {formatRupees((budget?.total?.low || 0))} – {formatRupees((budget?.total?.high || 0))} range
           </div>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:16 }}>
           {[
-            { label:'Conservative', sublabel:'Low estimate', val:budget.total.low, color:'#0D9488', bg:'#F0FDF4' },
-            { label:'Premium',      sublabel:'High estimate', val:budget.total.high, color:'#C2410C', bg:'#FFF7ED' },
+            { label:'Conservative', sublabel:'Low estimate', val:(budget?.total?.low || 0), color:'#0D9488', bg:'#F0FDF4' },
+            { label:'Premium',      sublabel:'High estimate', val:(budget?.total?.high || 0), color:'#C2410C', bg:'#FFF7ED' },
           ].map(s => (
             <div key={s.label} className="section-card" style={{
               background:s.bg, textAlign:'center', margin:0,
@@ -696,21 +706,21 @@ export default function Tab8Budget() {
             <PieChart items={pieItems} />
             <div style={{ flex:1, minWidth:220 }}>
               {pieItems.map(item => {
-                const pct = budget.total.mid > 0 ? Math.round((item.value/budget.total.mid)*100) : 0
+                const pct = (budget?.total?.mid || 0) > 0 ? Math.round((item.value/(budget?.total?.mid || 0))*100) : 0
                 return (
                   <div key={item.label} style={{ display:'flex', alignItems:'center', gap:8,
                     padding:'6px 0', borderBottom:'1px solid var(--border)' }}>
                     <div style={{ width:12, height:12, borderRadius:2, background:item.color, flexShrink:0 }} />
                     <div style={{ flex:1, fontSize:12, fontWeight:600 }}>{item.label}</div>
                     <div style={{ fontSize:11, color:'var(--muted)', marginRight:6 }}>{pct}%</div>
-                    <div style={{ fontSize:13, fontWeight:800, color:item.color }}>{formatRupees(item.value)}</div>
+                    <div style={{ fontSize:13, fontWeight:800, color:item.color }}>{formatRupees(item?.value || 0)}</div>
                   </div>
                 )
               })}
               <div style={{ display:'flex', justifyContent:'flex-end', marginTop:8,
                 fontSize:13, fontWeight:800, color:'var(--primary-dark)', paddingTop:6,
                 borderTop:'2px solid var(--primary)' }}>
-                TOTAL: {formatRupees(budget.total.mid)}
+                TOTAL: {formatRupees((budget?.total?.mid || 0))}
               </div>
             </div>
           </div>
@@ -733,8 +743,8 @@ export default function Tab8Budget() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(budget.items||{}).map(([name, vals], ri) => {
-                  const pct       = budget.total.mid > 0 ? (vals.mid/budget.total.mid*100).toFixed(1) : '0'
+                {Object.entries((budget?.items || {})).map(([name, vals], ri) => {
+                  const pct       = (budget?.total?.mid || 0) > 0 ? (vals.mid/(budget?.total?.mid || 0)*100).toFixed(1) : '0'
                   const isOpen    = expanded.has(name)
                   const hasSubs   = (vals.sub_items||[]).length > 0
                   const isLogged  = loggedCats.has(name)
@@ -761,9 +771,9 @@ export default function Tab8Budget() {
                         </div>
                       </td>
                       <td style={{ padding:'10px 10px', color:'var(--muted)', fontSize:11 }}>{vals.note}</td>
-                      <td style={{ padding:'10px 10px', textAlign:'right', color:'#0D9488', fontWeight:600, fontSize:12 }}>{formatRupees(vals.low)}</td>
-                      <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:800, color:'var(--primary)', fontSize:14 }}>{formatRupees(vals.mid)}</td>
-                      <td style={{ padding:'10px 10px', textAlign:'right', color:'#C2410C', fontWeight:600, fontSize:12 }}>{formatRupees(vals.high)}</td>
+                      <td style={{ padding:'10px 10px', textAlign:'right', color:'#0D9488', fontWeight:600, fontSize:12 }}>{formatRupees(vals?.low || 0)}</td>
+                      <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:800, color:'var(--primary)', fontSize:14 }}>{formatRupees(vals?.mid || 0)}</td>
+                      <td style={{ padding:'10px 10px', textAlign:'right', color:'#C2410C', fontWeight:600, fontSize:12 }}>{formatRupees(vals?.high || 0)}</td>
                       <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700,
                         color: parseFloat(pct)>25?'#DC2626':parseFloat(pct)>15?'#D97706':'var(--muted)' }}>
                         {pct}%
@@ -816,13 +826,13 @@ export default function Tab8Budget() {
                         </td>
                         <td />
                         <td style={{ textAlign:'right', padding:'5px 10px', fontSize:11, color:'#0D9488' }}>
-                          {sub.low ? formatRupees(sub.low) : '—'}
+                          {sub.low ? formatRupees(sub?.low || 0) : '—'}
                         </td>
                         <td style={{ textAlign:'right', padding:'5px 10px', fontSize:11, fontWeight:700, color:'#4B5563' }}>
-                          {sub.mid ? formatRupees(sub.mid) : '—'}
+                          {sub.mid ? formatRupees(sub?.mid || 0) : '—'}
                         </td>
                         <td style={{ textAlign:'right', padding:'5px 10px', fontSize:11, color:'#C2410C' }}>
-                          {sub.high ? formatRupees(sub.high) : '—'}
+                          {sub.high ? formatRupees(sub?.high || 0) : '—'}
                         </td>
                         <td />
                       </tr>
@@ -833,11 +843,11 @@ export default function Tab8Budget() {
                   <td colSpan={2} style={{ padding:'14px 12px', fontFamily:'EB Garamond,serif',
                     fontWeight:800, fontSize:17 }}>TOTAL ESTIMATE</td>
                   <td style={{ textAlign:'right', padding:'14px 10px', fontFamily:'EB Garamond,serif',
-                    fontWeight:700, fontSize:16, color:'#A7F3D0' }}>{formatRupees(budget.total.low)}</td>
+                    fontWeight:700, fontSize:16, color:'#A7F3D0' }}>{formatRupees((budget?.total?.low || 0))}</td>
                   <td style={{ textAlign:'right', padding:'14px 10px', fontFamily:'EB Garamond,serif',
-                    fontWeight:900, fontSize:22, color:'#FDE68A' }}>{formatRupees(budget.total.mid)}</td>
+                    fontWeight:900, fontSize:22, color:'#FDE68A' }}>{formatRupees((budget?.total?.mid || 0))}</td>
                   <td style={{ textAlign:'right', padding:'14px 10px', fontFamily:'EB Garamond,serif',
-                    fontWeight:700, fontSize:16, color:'#FCA5A5' }}>{formatRupees(budget.total.high)}</td>
+                    fontWeight:700, fontSize:16, color:'#FCA5A5' }}>{formatRupees((budget?.total?.high || 0))}</td>
                   <td style={{ textAlign:'right', padding:'14px 10px', color:'rgba(255,255,255,0.6)', fontSize:12 }}>
                     100%
                   </td>
@@ -912,7 +922,7 @@ export default function Tab8Budget() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.keys(budget.items||{}).map((cat, ri) => (
+                    {Object.keys((budget?.items || {})).map((cat, ri) => (
                       <tr key={cat} style={{ background: ri%2===0?'white':'var(--ivory)' }}>
                         <td style={{ padding:'7px 10px', fontWeight:600, fontSize:12 }}>
                           <span style={{ display:'inline-block', width:8, height:8,
@@ -1016,7 +1026,7 @@ export default function Tab8Budget() {
                   borderRadius:10, border:'1.5px solid #FDE68A' }}>
                   <div style={{ fontSize:10, color:'var(--muted)', marginBottom:4 }}>{s.label}</div>
                   <div style={{ fontFamily:'EB Garamond,serif', fontSize:20, fontWeight:900, color:s.color }}>
-                    {formatRupees(s.value)}
+                    {formatRupees(s?.value || 0)}
                   </div>
                 </div>
               ))}
@@ -1157,12 +1167,12 @@ export default function Tab8Budget() {
             <button onClick={() => {
   const msg = `🪷 *WeddingBudget.AI Estimate*
 
-💰 *Total: ${formatRupees(budget.total.mid)}*
-📊 Range: ${formatRupees(budget.total.low)} – ${formatRupees(budget.total.high)}
-🎯 Confidence: ${Math.round((budget.confidence_score||0.72)*100)}%
+💰 *Total: ${formatRupees((budget?.total?.mid || 0))}*
+📊 Range: ${formatRupees((budget?.total?.low || 0))} – ${formatRupees((budget?.total?.high || 0))}
+🎯 Confidence: ${Math.round(((budget?.confidence_score || 0)||0.72)*100)}%
 
 *Breakdown:*
-${Object.entries(budget.items||{}).map(([k,v])=>`• ${k}: ${formatRupees(v.mid)}`).join('\n')}
+${Object.entries((budget?.items || {})).map(([k,v])=>`• ${k}: ${formatRupees(v?.mid || 0)}`).join('\n')}
 
 _Generated by WeddingBudget.AI_
 https://wedddingbudget-ai.vercel.app`
@@ -1223,7 +1233,7 @@ https://wedddingbudget-ai.vercel.app`
                   letterSpacing:1, marginBottom:6 }}>TOTAL BUDGET</div>
                 <div style={{ fontFamily:'EB Garamond,serif', fontSize:36,
                   fontWeight:900, color:'#D4537E', lineHeight:1 }}>
-                  {formatRupees(budget.total.mid)}
+                  {formatRupees((budget?.total?.mid || 0))}
                 </div>
                 <div style={{ fontSize:11, color:'#aaa', marginTop:4 }}>Mid estimate</div>
               </div>
