@@ -137,38 +137,41 @@ function PieChart({ items }) {
 }
 
 // ─── Budget Bar Chart (Vertical) ──────────────────────────────────────────────
-function BudgetBarChart({ budget, wedding, tracker }) {
+function BudgetBarChart({ budget }) {
   const canvasRef = useRef(null)
   const [tooltip, setTooltip] = useState(null)
   const barsRef   = useRef([])
 
   useEffect(() => {
     const canvas = canvasRef.current
-    if (!canvas || !budget) return
+    if (!canvas || !budget?.items) return
     const ctx = canvas.getContext('2d')
-    const actualTotal = (tracker || []).reduce((s, i) => s + i.actual, 0)
-    
-    // Data setup
-    const data = [
-      { label: 'Budget',    value: wedding?.total_budget || 0, color: '#023047' },
-      { label: 'Estimated', value: budget.total.mid || 0,     color: '#C9A84C' },
-      { label: 'Low',       value: budget.total.low || 0,     color: '#059669' },
-      { label: 'High',      value: budget.total.high || 0,    color: '#DC2626' },
-      { label: 'Actual',    value: actualTotal,               color: '#1D4ED8' },
-    ].filter(d => d.label !== 'Budget' || (wedding?.total_budget || 0) > 0)
 
-    if (!data.length) return
+    const categories = [
+      { label: 'Style',      keys: ['Wedding Type Base', 'Events & Ceremonies'], color: '#023047' },
+      { label: 'Venue',      keys: ['Venue', 'Accommodation'], color: '#04699B' },
+      { label: 'Decor',      keys: ['Decor & Design'], color: '#FB8500' },
+      { label: 'Food',       keys: ['Food & Beverages'], color: '#0D9488' },
+      { label: 'Artists',    keys: ['Artists & Entertainment'], color: '#1D4ED8' },
+      { label: 'Logistics',  keys: ['Logistics & Transport'], color: '#059669' },
+      { label: 'Sundries',   keys: ['Sundries & Basics'], color: '#C2410C' },
+    ].map(cat => ({
+      label: cat.label,
+      value: cat.keys.reduce((sum, key) => sum + ((budget.items[key]?.mid || 0)), 0),
+      color: cat.color,
+    })).filter(item => item.value > 0)
 
-    const maxVal = Math.max(...data.map(d => d.value), 1) * 1.1
-    const w = 400, h = 220
-    const padL = 50, padR = 20, padT = 30, padB = 40
+    if (!categories.length) return
+
+    const maxVal = Math.max(...categories.map(d => d.value), 1) * 1.1
+    const w = 460, h = 260
+    const padL = 52, padR = 24, padT = 32, padB = 52
     const chartW = w - padL - padR
     const chartH = h - padT - padB
 
     ctx.clearRect(0, 0, w, h)
 
-    // Y Axis labels and grid lines
-    ctx.strokeStyle = '#F3F4F6'
+    ctx.strokeStyle = '#E5E7EB'
     ctx.lineWidth = 1
     ctx.beginPath()
     for (let i = 0; i <= 4; i++) {
@@ -176,7 +179,6 @@ function BudgetBarChart({ budget, wedding, tracker }) {
       const val = maxVal - (maxVal / 4) * i
       ctx.moveTo(padL, y)
       ctx.lineTo(w - padR, y)
-      
       ctx.fillStyle = '#9CA3AF'
       ctx.font = '9px sans-serif'
       ctx.textAlign = 'right'
@@ -184,12 +186,11 @@ function BudgetBarChart({ budget, wedding, tracker }) {
     }
     ctx.stroke()
 
-    // Bars
-    const barW = Math.min(36, (chartW / data.length) * 0.7)
-    const spacing = chartW / data.length
+    const barW = Math.min(40, (chartW / categories.length) * 0.7)
+    const spacing = chartW / categories.length
     const bars = []
 
-    data.forEach((d, i) => {
+    categories.forEach((d, i) => {
       const bh = (d.value / maxVal) * chartH
       const bx = padL + spacing * i + (spacing - barW) / 2
       const by = padT + chartH - bh
@@ -206,12 +207,12 @@ function BudgetBarChart({ budget, wedding, tracker }) {
       ctx.fillStyle = '#6B7280'
       ctx.font = 'bold 9px sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText(d.label, bx + barW / 2, h - padB + 16)
+      ctx.fillText(d.label, bx + barW / 2, h - padB + 18)
 
       bars.push({ x: bx, y: by, w: barW, h: bh, item: d })
     })
     barsRef.current = bars
-  }, [budget, wedding?.total_budget, tracker])
+  }, [budget])
 
   const handleMouseMove = (e) => {
     const canvas = canvasRef.current
@@ -228,8 +229,8 @@ function BudgetBarChart({ budget, wedding, tracker }) {
           label: bar.item.label,
           value: formatRupees(bar.item.value),
           color: bar.item.color,
-          x: (e.clientX - rect.left),
-          y: (e.clientY - rect.top)
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
         })
         return
       }
@@ -240,10 +241,10 @@ function BudgetBarChart({ budget, wedding, tracker }) {
   return (
     <div style={{ position:'relative', width:'100%' }}>
       <div style={{ fontSize:13, fontWeight:800, color:'#111', marginBottom:12, marginTop:20, textAlign:'center' }}>
-        Budget vs Estimate
+        7-Tab Budget Comparison
       </div>
-      <canvas ref={canvasRef} width={400} height={220} 
-        style={{ width:'100%', height:'auto', maxWidth:400, display:'block', margin:'0 auto', cursor:'help' }}
+      <canvas ref={canvasRef} width={460} height={260}
+        style={{ width:'100%', height:'auto', maxWidth:460, display:'block', margin:'0 auto', cursor:'help' }}
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setTooltip(null)} />
       {tooltip && (
