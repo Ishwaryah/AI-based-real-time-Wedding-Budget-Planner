@@ -17,7 +17,7 @@ function saveToken(token) {
 
 function getToken() {
   const token = sessionStorage.getItem(TOKEN_KEY)
-  const ts    = parseInt(sessionStorage.getItem(TOKEN_TS_KEY) || '0', 10)
+  const ts = parseInt(sessionStorage.getItem(TOKEN_TS_KEY) || '0', 10)
   if (!token || Date.now() - ts > TOKEN_TTL_MS) {
     sessionStorage.removeItem(TOKEN_KEY)
     sessionStorage.removeItem(TOKEN_TS_KEY)
@@ -100,8 +100,10 @@ function Card({ children, style = {} }) {
 
 function SectionTitle({ children }) {
   return (
-    <div style={{ fontWeight: 800, fontSize: 16, color: C.navy, marginBottom: 16,
-      borderBottom: `2px solid ${C.amber}`, paddingBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{
+      fontWeight: 800, fontSize: 16, color: C.navy, marginBottom: 16,
+      borderBottom: `2px solid ${C.amber}`, paddingBottom: 8, fontFamily: "'DM Sans', sans-serif"
+    }}>
       {children}
     </div>
   )
@@ -127,8 +129,8 @@ function Btn({ children, onClick, color = C.navy, textColor = 'white', small = f
 function LoginPage({ onLogin }) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const attempt = async (e) => {
     if (e) e.preventDefault()
@@ -165,7 +167,7 @@ function LoginPage({ onLogin }) {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 48, marginBottom: 10 }}></div>
           <div style={{ fontSize: 24, fontWeight: 800, color: C.navy }}>Admin Panel</div>
-          <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}>WeddingBudget.AI — Restricted Access</div>
+          <div style={{ fontSize: 13, color: '#888', marginTop: 4 }}></div>
         </div>
 
         <div style={{ marginBottom: 14 }}>
@@ -201,9 +203,9 @@ function LoginPage({ onLogin }) {
 function ArtistsTab() {
   const [artists, setArtists] = useState([])
   const [editing, setEditing] = useState(null)  // {id, name, type, min_fee, max_fee}
-  const [adding,  setAdding]  = useState(false)
-  const [draft,   setDraft]   = useState({ name: '', type: '', min_fee: '', max_fee: '' })
-  const [toast, showToast]    = useToast()
+  const [adding, setAdding] = useState(false)
+  const [draft, setDraft] = useState({ name: '', type: '', min_fee: '', max_fee: '' })
+  const [toast, showToast] = useToast()
 
   const load = useCallback(() => apiFetch('/artists').then(setArtists).catch(e => showToast(e.message, false)), [])
   useEffect(() => { load() }, [load])
@@ -239,10 +241,10 @@ function ArtistsTab() {
 
   const DraftRow = () => (
     <tr style={{ background: '#fffbea' }}>
-      <td style={{ padding: '8px 10px' }}><input value={draft.name} onChange={e => setDraft(d => ({...d, name: e.target.value}))} style={{...inputStyle, width: 160}} placeholder="Name" /></td>
-      <td style={{ padding: '8px 10px' }}><input value={draft.type} onChange={e => setDraft(d => ({...d, type: e.target.value}))} style={{...inputStyle, width: 100}} placeholder="Type" /></td>
-      <td style={{ padding: '8px 10px' }}><input type="number" value={draft.min_fee} onChange={e => setDraft(d => ({...d, min_fee: e.target.value}))} style={{...inputStyle, width: 110}} placeholder="Min ₹" /></td>
-      <td style={{ padding: '8px 10px' }}><input type="number" value={draft.max_fee} onChange={e => setDraft(d => ({...d, max_fee: e.target.value}))} style={{...inputStyle, width: 110}} placeholder="Max ₹" /></td>
+      <td style={{ padding: '8px 10px' }}><input value={draft.name} onChange={e => setDraft(d => ({ ...d, name: e.target.value }))} style={{ ...inputStyle, width: 160 }} placeholder="Name" /></td>
+      <td style={{ padding: '8px 10px' }}><input value={draft.type} onChange={e => setDraft(d => ({ ...d, type: e.target.value }))} style={{ ...inputStyle, width: 100 }} placeholder="Type" /></td>
+      <td style={{ padding: '8px 10px' }}><input type="number" value={draft.min_fee} onChange={e => setDraft(d => ({ ...d, min_fee: e.target.value }))} style={{ ...inputStyle, width: 110 }} placeholder="Min ₹" /></td>
+      <td style={{ padding: '8px 10px' }}><input type="number" value={draft.max_fee} onChange={e => setDraft(d => ({ ...d, max_fee: e.target.value }))} style={{ ...inputStyle, width: 110 }} placeholder="Max ₹" /></td>
       <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
         <Btn small onClick={save} color={C.green}>Save</Btn>
         <Btn small onClick={() => { setEditing(null); setAdding(false); setDraft({ name: '', type: '', min_fee: '', max_fee: '' }) }} color="#888">Cancel</Btn>
@@ -266,16 +268,16 @@ function ArtistsTab() {
           <tbody>
             {artists.map((a, i) => (
               editing?.id === a.id ? <DraftRow key={a.id} /> :
-              <tr key={a.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd' }}>
-                <td style={{ padding: '10px 10px', fontWeight: 600, color: C.navy }}>{a.name}</td>
-                <td style={{ padding: '10px 10px', color: C.blue }}>{a.type}</td>
-                <td style={{ padding: '10px 10px' }}>₹{Number(a.min_fee).toLocaleString('en-IN')}</td>
-                <td style={{ padding: '10px 10px' }}>₹{Number(a.max_fee).toLocaleString('en-IN')}</td>
-                <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
-                  <Btn small onClick={() => startEdit(a)} color={C.blue}>Edit</Btn>
-                  <Btn small onClick={() => del(a.id)} color={C.red}>Del</Btn>
-                </td>
-              </tr>
+                <tr key={a.id} style={{ background: i % 2 === 0 ? 'white' : '#f9fbfd' }}>
+                  <td style={{ padding: '10px 10px', fontWeight: 600, color: C.navy }}>{a.name}</td>
+                  <td style={{ padding: '10px 10px', color: C.blue }}>{a.type}</td>
+                  <td style={{ padding: '10px 10px' }}>₹{Number(a.min_fee).toLocaleString('en-IN')}</td>
+                  <td style={{ padding: '10px 10px' }}>₹{Number(a.max_fee).toLocaleString('en-IN')}</td>
+                  <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
+                    <Btn small onClick={() => startEdit(a)} color={C.blue}>Edit</Btn>
+                    <Btn small onClick={() => del(a.id)} color={C.red}>Del</Btn>
+                  </td>
+                </tr>
             ))}
             {adding && !editing && <DraftRow key="new" />}
           </tbody>
@@ -292,8 +294,8 @@ function ArtistsTab() {
 
 // ── Tab: F&B Rates ─────────────────────────────────────────────────────────────
 function FBRatesTab() {
-  const [rates, setRates]   = useState(null)
-  const [toast, showToast]  = useToast()
+  const [rates, setRates] = useState(null)
+  const [toast, showToast] = useToast()
 
   useEffect(() => {
     apiFetch('/fb-rates').then(setRates).catch(e => showToast(e.message, false))
@@ -356,11 +358,11 @@ function FBRatesTab() {
 
 // ── Tab: Logistics ─────────────────────────────────────────────────────────────
 function LogisticsTab() {
-  const [data, setData]       = useState({})
+  const [data, setData] = useState({})
   const [editing, setEditing] = useState(null)
-  const [draft, setDraft]     = useState({ city: '', ghodi: '', dholi: '', transfer_per_trip: '' })
-  const [adding, setAdding]   = useState(false)
-  const [toast, showToast]    = useToast()
+  const [draft, setDraft] = useState({ city: '', ghodi: '', dholi: '', transfer_per_trip: '' })
+  const [adding, setAdding] = useState(false)
+  const [toast, showToast] = useToast()
 
   useEffect(() => {
     apiFetch('/logistics').then(setData).catch(e => showToast(e.message, false))
@@ -404,7 +406,7 @@ function LogisticsTab() {
                   <td style={{ padding: '8px 10px', fontWeight: 700 }}>{city}</td>
                   {['ghodi', 'dholi', 'transfer_per_trip'].map(f => (
                     <td key={f} style={{ padding: '8px 10px' }}>
-                      <input type="number" value={draft[f]} onChange={e => setDraft(d => ({...d, [f]: e.target.value}))} style={{...inputStyle, width: 110}} />
+                      <input type="number" value={draft[f]} onChange={e => setDraft(d => ({ ...d, [f]: e.target.value }))} style={{ ...inputStyle, width: 110 }} />
                     </td>
                   ))}
                   <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
@@ -424,9 +426,9 @@ function LogisticsTab() {
             ))}
             {adding && (
               <tr style={{ background: '#fffbea' }}>
-                <td style={{ padding: '8px 10px' }}><input value={draft.city} onChange={e => setDraft(d => ({...d, city: e.target.value}))} style={{...inputStyle, width: 110}} placeholder="City name" /></td>
+                <td style={{ padding: '8px 10px' }}><input value={draft.city} onChange={e => setDraft(d => ({ ...d, city: e.target.value }))} style={{ ...inputStyle, width: 110 }} placeholder="City name" /></td>
                 {['ghodi', 'dholi', 'transfer_per_trip'].map(f => (
-                  <td key={f} style={{ padding: '8px 10px' }}><input type="number" value={draft[f]} onChange={e => setDraft(d => ({...d, [f]: e.target.value}))} style={{...inputStyle, width: 110}} placeholder="₹" /></td>
+                  <td key={f} style={{ padding: '8px 10px' }}><input type="number" value={draft[f]} onChange={e => setDraft(d => ({ ...d, [f]: e.target.value }))} style={{ ...inputStyle, width: 110 }} placeholder="₹" /></td>
                 ))}
                 <td style={{ padding: '8px 10px', display: 'flex', gap: 6 }}>
                   <Btn small onClick={saveCity} color={C.green}>Save</Btn>
@@ -450,7 +452,7 @@ function LogisticsTab() {
 function DecorLabelsTab() {
   const [images, setImages] = useState([])
   const [drafts, setDrafts] = useState({})   // filename → {function_type, style, complexity, seed_cost}
-  const [toast, showToast]  = useToast()
+  const [toast, showToast] = useToast()
 
   useEffect(() => {
     apiFetch('/decor-images').then(r => {
@@ -459,9 +461,9 @@ function DecorLabelsTab() {
       r.images?.forEach(img => {
         init[img.filename] = {
           function_type: img.function_type || '',
-          style:         img.style || '',
-          complexity:    img.complexity ?? 3,
-          seed_cost:     img.seed_cost ?? '',
+          style: img.style || '',
+          complexity: img.complexity ?? 3,
+          seed_cost: img.seed_cost ?? '',
         }
       })
       setDrafts(init)
@@ -561,7 +563,7 @@ function BudgetTrackerTab() {
 
   const BUDGET_CATEGORIES = [
     'Wedding Type Base',
-    'Events & Ceremonies', 
+    'Events & Ceremonies',
     'Venue',
     'Accommodation',
     'Food & Beverages',
@@ -615,13 +617,13 @@ function BudgetTrackerTab() {
           actual: act,
         }),
       })) || {}
-      
+
       const improvement = Number(result.accuracy_improvement || 0)
       setMessage(`${trimmed} updated. Accuracy improvement: ${improvement >= 0 ? '+' : ''}${improvement.toFixed(1)}%`)
-      
+
       // Reset form
       setNewEntry({ category: BUDGET_CATEGORIES[0], estimated: '', actual: '' })
-      
+
       // Refresh summary
       await loadSummary()
     } catch (e) {
@@ -829,13 +831,13 @@ function BudgetRulesTab() {
 
 // ── Tab: Settings ──────────────────────────────────────────────────────────────
 function SettingsTab({ onLogout }) {
-  const [data, setData]    = useState(null)
+  const [data, setData] = useState(null)
   const [status, setStatus] = useState(null)
   const [training, setTraining] = useState(false)
   const [toast, showToast] = useToast()
 
   const loadStatus = useCallback(() => {
-    apiFetch('/model-status').then(setStatus).catch(() => {})
+    apiFetch('/model-status').then(setStatus).catch(() => { })
   }, [])
 
   useEffect(() => {
@@ -883,7 +885,7 @@ function SettingsTab({ onLogout }) {
               </label>
               <input type="number" step="0.01" min="0" max="1"
                 value={data.contingency_pct}
-                onChange={e => setData(d => ({...d, contingency_pct: e.target.value}))}
+                onChange={e => setData(d => ({ ...d, contingency_pct: e.target.value }))}
                 style={{ ...inputStyle, maxWidth: 200 }} />
             </div>
             <div>
@@ -892,7 +894,7 @@ function SettingsTab({ onLogout }) {
               </label>
               <input type="number" step="0.01" min="0" max="1"
                 value={data.weekend_surcharge_pct}
-                onChange={e => setData(d => ({...d, weekend_surcharge_pct: e.target.value}))}
+                onChange={e => setData(d => ({ ...d, weekend_surcharge_pct: e.target.value }))}
                 style={{ ...inputStyle, maxWidth: 200 }} />
             </div>
             {data.updated_at && (
@@ -946,17 +948,17 @@ function SettingsTab({ onLogout }) {
 
 // ── Main AdminPage ─────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'artists',  label: ' Artists' },
-  { id: 'fb',       label: ' F&B Rates' },
-  { id: 'logistics',label: ' Logistics' },
-  { id: 'decor',    label: ' Decor Labels' },
-  { id: 'rules',    label: ' Budget Rules' },
-  { id: 'tracker',  label: ' Budget Tracker' },
+  { id: 'artists', label: ' Artists' },
+  { id: 'fb', label: ' F&B Rates' },
+  { id: 'logistics', label: ' Logistics' },
+  { id: 'decor', label: ' Decor Labels' },
+  { id: 'rules', label: ' Budget Rules' },
+  { id: 'tracker', label: ' Budget Tracker' },
   { id: 'settings', label: ' Settings' },
 ]
 
 export default function AdminPage({ onClose }) {
-  const [authed, setAuthed]     = useState(!!getToken())
+  const [authed, setAuthed] = useState(!!getToken())
   const [activeTab, setActiveTab] = useState('artists')
 
   const logout = () => { clearToken(); setAuthed(false) }
@@ -1007,13 +1009,13 @@ export default function AdminPage({ onClose }) {
 
       {/* Content */}
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
-        {activeTab === 'artists'   && <ArtistsTab />}
-        {activeTab === 'fb'        && <FBRatesTab />}
+        {activeTab === 'artists' && <ArtistsTab />}
+        {activeTab === 'fb' && <FBRatesTab />}
         {activeTab === 'logistics' && <LogisticsTab />}
-        {activeTab === 'decor'     && <DecorLabelsTab />}
-        {activeTab === 'rules'     && <BudgetRulesTab />}
-        {activeTab === 'tracker'   && <BudgetTrackerTab />}
-        {activeTab === 'settings'  && <SettingsTab onLogout={logout} />}
+        {activeTab === 'decor' && <DecorLabelsTab />}
+        {activeTab === 'rules' && <BudgetRulesTab />}
+        {activeTab === 'tracker' && <BudgetTrackerTab />}
+        {activeTab === 'settings' && <SettingsTab onLogout={logout} />}
       </div>
     </div>
   )

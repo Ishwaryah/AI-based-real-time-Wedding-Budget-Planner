@@ -39,53 +39,59 @@ function localPredict(item) {
 function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
   const [imgErr, setImgErr] = useState(false)
   const p = localPredict(item)
+  const fallback = '#7C3AED'
   return (
     <div
       onClick={() => onToggle(item)}
       className={`sel-card${isSel ? ' selected' : ''}${hasAnySelected && !isSel ? ' dimmed' : ''}`}
       style={{
-        border:`2px solid ${isSel ? '#D4537E' : 'var(--border)'}`,
-        borderRadius:16, overflow:'hidden',
-        background: isSel ? '#FDF2F8' : 'white',
-        boxShadow: isSel ? '0 4px 24px rgba(212,83,126,0.15)' : '0 2px 8px rgba(0,0,0,0.04)',
+        border: isSel ? '2px solid #C9A84C' : '2px solid transparent',
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: fallback,
+        backgroundImage: item.imageUrl && !imgErr
+          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${item.imageUrl})`
+          : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: 120,
+        boxShadow: isSel ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+        transition: 'all 0.2s ease',
+        color: '#fff',
+        position: 'relative',
+        padding: '12px 14px 14px',
       }}
     >
-      {item.imageUrl && !imgErr ? (
-        <img src={item.imageUrl} alt={item.name}
-          onError={() => setImgErr(true)}
-          style={{ width:'100%', height:140, objectFit:'cover', display:'block' }} />
-      ) : (
-        <div className="sel-card-icon" style={{ fontSize:52, textAlign:'center', padding:'24px 0 14px',
-          background:'linear-gradient(160deg,var(--ivory-dark),var(--primary-light))' }}>{item.emoji}</div>
-      )}
-      <div style={{ padding:'12px 14px 14px' }}>
-        <div style={{ fontWeight:700, fontSize:13, marginBottom:8, lineHeight:1.3, color: isSel ? '#B83A64' : '#111' }}>{item.name}</div>
+      {item.imageUrl && !imgErr && <img src={item.imageUrl} alt="" onError={() => setImgErr(true)} style={{ display: 'none' }} />}
+      {!item.imageUrl || imgErr ? <div className="sel-card-icon" style={{ fontSize: 32, textAlign: 'center', marginBottom: 6 }}>{item.emoji}</div> : null}
+      <div>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, lineHeight: 1.3, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{item.name}</div>
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
           <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background:COMPLEXITY_COLOR[item.complexity]+'20', color:COMPLEXITY_COLOR[item.complexity] }}>
+            background:'rgba(255,255,255,0.22)', color:'#fff' }}>
             {item.complexity}
           </span>
           <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background:(STYLE_COLOR[item.style]||'#888')+'20', color:STYLE_COLOR[item.style]||'#888' }}>
+            background:'rgba(255,255,255,0.2)', color:'#fff' }}>
             {item.style}
           </span>
         </div>
-        <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color: isSel ? '#D4537E' : 'var(--primary)' }}>
+        <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'#fff' }}>
           {formatRupees(p.predicted)}
         </div>
-        <div style={{ fontSize:11, color:'var(--muted)', marginTop:2 }}>
+        <div style={{ fontSize:12, color:'rgba(255,255,255,0.85)', marginTop:2 }}>
           {formatRupees(p.low)} – {formatRupees(p.high)}
         </div>
       </div>
       {/* Rose checkmark badge */}
       <div style={{
         position:'absolute', top:10, right:10, width:26, height:26,
-        background:'#D4537E', borderRadius:'50%',
-        alignItems:'center', justifyContent:'center', color:'white', fontWeight:'bold', fontSize:13,
-        boxShadow:'0 2px 8px rgba(212,83,126,0.4)',
+        background:'#C9A84C', borderRadius:'50%',
+        alignItems:'center', justifyContent:'center', color:'#111', fontWeight:'bold', fontSize:13,
+        boxShadow:'0 2px 8px rgba(0,0,0,0.35)',
         display: isSel ? 'flex' : 'none',
         animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
-      }}></div>
+      }}>✓</div>
     </div>
   )
 }

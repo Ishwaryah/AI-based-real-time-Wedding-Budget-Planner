@@ -27,44 +27,52 @@ const ARTIST_COST_MAP = {
 function ArtistCard({ artist, isSelected, onToggle, hasAnySelected }) {
   const [imgErr, setImgErr] = useState(false)
   const [lo, hi] = ARTIST_COST_MAP[artist.id] || [0, 0]
+  const fallback = '#334155'
 
   return (
     <div
       onClick={() => onToggle(artist)}
       className={`sel-card${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
       style={{
-        border: `2px solid ${isSelected ? '#D4537E' : C.sky}`,
-        borderRadius: 16, overflow: 'hidden',
-        background: isSelected ? '#FDF2F8' : 'white',
-        boxShadow: isSelected ? '0 4px 20px rgba(212,83,126,0.12)' : 'none',
+        border: isSelected ? '2px solid #C9A84C' : '2px solid transparent',
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: fallback,
+        backgroundImage: artist.imageUrl && !imgErr
+          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${artist.imageUrl})`
+          : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        minHeight: 120,
+        boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+        transition: 'all 0.2s ease',
+        color: 'white',
+        position: 'relative',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        textAlign: 'center',
+        padding: '16px 14px',
       }}
     >
-      {artist.imageUrl && !imgErr ? (
-        <img src={artist.imageUrl} alt={artist.label}
-          onError={() => setImgErr(true)}
-          style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
-      ) : (
-        <div className="sel-card-icon" style={{ fontSize: 40, textAlign: 'center', padding: '20px 0 14px',
-          background: `linear-gradient(135deg, ${C.light}, #FBE8EF)` }}>
-          {artist.emoji}
-        </div>
-      )}
-      <div style={{ padding: '12px 14px 14px', textAlign: 'center' }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 6, color: isSelected ? '#B83A64' : C.primary }}>{artist.label}</div>
-        <div style={{ fontSize: 12, color: isSelected ? '#D4537E' : C.blue, fontWeight: 700 }}>
+      {artist.imageUrl && !imgErr && <img src={artist.imageUrl} alt="" onError={() => setImgErr(true)} style={{ display: 'none' }} />}
+      {!artist.imageUrl || imgErr ? <div className="sel-card-icon" style={{ fontSize: 28, marginBottom: 8 }}>{artist.emoji}</div> : null}
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{artist.label}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>
           {formatRupees(lo)} – {formatRupees(hi)}
         </div>
       </div>
       {/* Rose checkmark badge */}
       <div style={{
         position: 'absolute', top: 8, right: 8, width: 24, height: 24,
-        background: '#D4537E', borderRadius: '50%', color: 'white',
+        background: '#C9A84C', borderRadius: '50%', color: '#111',
         alignItems: 'center', justifyContent: 'center',
         fontSize: 12, fontWeight: 'bold',
-        boxShadow: '0 2px 8px rgba(212,83,126,0.4)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
         display: isSelected ? 'flex' : 'none',
         animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
-      }}></div>
+      }}>✓</div>
     </div>
   )
 }

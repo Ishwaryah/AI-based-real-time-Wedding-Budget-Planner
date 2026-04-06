@@ -2,30 +2,68 @@ import { useState } from 'react'
 
 export function ImageCard({ item, selected, onClick, showCost = false, hasAnySelected = false }) {
   const [imgError, setImgError] = useState(false)
+  const fallbackBg = item.fallbackColor || '#4A5568'
+  const cardStyle = {
+    minHeight: 120,
+    borderRadius: 12,
+    cursor: 'pointer',
+    border: selected ? '2px solid #C9A84C' : '2px solid transparent',
+    transition: 'all 0.2s ease',
+    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    padding: '14px 12px 12px',
+    boxShadow: selected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+    backgroundColor: fallbackBg,
+    backgroundImage: !imgError && item.imageUrl
+      ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${item.imageUrl})`
+      : 'none',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+  }
 
   return (
     <div
       className={`image-card sel-card ${selected ? 'selected' : ''} ${hasAnySelected && !selected ? 'dimmed' : ''}`}
       onClick={() => onClick(item.id)}
       title={item.label}
+      style={cardStyle}
     >
-      {item.imageUrl && !imgError ? (
+      {item.imageUrl && !imgError && (
         <img
           src={item.imageUrl}
-          alt={item.label}
+          alt=""
           onError={() => setImgError(true)}
+          style={{ display: 'none' }}
         />
-      ) : (
-        <div className="card-emoji sel-card-icon">{item.emoji || '•'}</div>
       )}
-      <div className="card-label" style={{ overflow: 'hidden', maxWidth: '100%' }}>{item.label}</div>
+      {!item.imageUrl || imgError ? (
+        <div className="card-emoji sel-card-icon" style={{ fontSize: 28, marginBottom: 8 }}>
+          {item.emoji || '•'}
+        </div>
+      ) : null}
+      <div className="card-label" style={{
+        overflow: 'hidden',
+        maxWidth: '100%',
+        fontWeight: 700,
+        fontSize: 16,
+        color: '#fff',
+        textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+      }}>
+        {item.label}
+      </div>
       {showCost && item.cost && (
-        <div style={{ fontSize: 11, color: selected ? '#B83A64' : 'var(--primary)', fontWeight: 700, textAlign: 'center', paddingBottom: 6 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 600, textAlign: 'center', paddingTop: 4 }}>
           {item.cost}
         </div>
       )}
       {showCost && item.desc && !item.cost && (
-        <div style={{ fontSize: 11, color: selected ? '#B83A64' : 'var(--primary)', fontWeight: 600, textAlign: 'center', paddingBottom: 6 }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 600, textAlign: 'center', paddingTop: 4 }}>
           {item.desc}
         </div>
       )}
@@ -35,11 +73,11 @@ export function ImageCard({ item, selected, onClick, showCost = false, hasAnySel
         style={{
           position: 'absolute', top: 7, right: 7,
           width: 22, height: 22, borderRadius: '50%',
-          background: '#D4537E', color: 'white',
+          background: '#C9A84C', color: '#111',
           fontSize: 12, fontWeight: 800,
           alignItems: 'center', justifyContent: 'center',
           display: selected ? 'flex' : 'none',
-          boxShadow: '0 2px 8px rgba(212,83,126,0.4)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
           animation: selected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
         }}
       >✓</span>

@@ -6,19 +6,19 @@ import { scrollToNextSection } from '../utils/scrollToNext'
 // ─── Option definitions ────────────────────────────────────────────────────────
 
 const WEDDING_TYPE_OPTIONS = [
-  { id: 'Hindu',     icon: '', label: 'Hindu' },
-  { id: 'Islam',     icon: '', label: 'Islamic' },
-  { id: 'Sikh',      icon: '', label: 'Sikh' },
-  { id: 'Christian', icon: '', label: 'Christian' },
-  { id: 'Buddhist',  icon: '', label: 'Buddhist' },
-  { id: 'Jain',      icon: '', label: 'Jain' },
-  { id: 'Generic',   icon: '', label: 'Mixed / Generic' },
+  { id: 'Hindu',     icon: '', label: 'Hindu', imageUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#7C3AED' },
+  { id: 'Islam',     icon: '', label: 'Islamic', imageUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Sikh',      icon: '', label: 'Sikh', imageUrl: 'https://images.unsplash.com/photo-1621873495484-37f2e2f4f0b4?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
+  { id: 'Christian', icon: '', label: 'Christian', imageUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1E40AF' },
+  { id: 'Buddhist',  icon: '', label: 'Buddhist', imageUrl: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#B45309' },
+  { id: 'Jain',      icon: '', label: 'Jain', imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#065F46' },
+  { id: 'Generic',   icon: '', label: 'Mixed / Generic', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
 ]
 
 const BUDGET_STYLE_OPTIONS = [
-  { id: 'Minimalist', icon: '', label: 'Minimalist', desc: 'Under ₹15L · Essential elegance' },
-  { id: 'Modest',     icon: '', label: 'Modest',     desc: '₹15L – ₹40L · Beautiful balance' },
-  { id: 'Luxury',     icon: '', label: 'Luxury',     desc: '₹1Cr+ · No compromises' },
+  { id: 'Minimalist', icon: '', label: 'Minimalist', desc: 'Under ₹15L · Essential elegance', imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#475569' },
+  { id: 'Modest',     icon: '', label: 'Modest',     desc: '₹15L – ₹40L · Beautiful balance', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Luxury',     icon: '', label: 'Luxury',     desc: '₹1Cr+ · No compromises', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
 ]
 
 const EVENT_OPTIONS = [
@@ -40,44 +40,59 @@ const FONT = { fontFamily: "'DM Sans', 'Inter', sans-serif" }
 // ─── Premium selection card ────────────────────────────────────────────────────
 
 function SelCard({ item, isSelected, onToggle, hasAnySelected, wide = false }) {
+  const [imgErr, setImgErr] = useState(false)
+  const cardBg = item.fallbackColor || '#334155'
   return (
     <div
       onClick={() => onToggle(item.id)}
       className={`sel-card${wide ? ' budget-style-card' : ''}${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
       style={{
-        border: `2px solid ${isSelected ? '#D4537E' : '#EBEBEB'}`,
-        borderRadius: 14,
-        background: isSelected ? '#FDF2F8' : 'white',
+        border: isSelected ? '2px solid #C9A84C' : '2px solid transparent',
+        borderRadius: 12,
+        backgroundColor: cardBg,
+        backgroundImage: !imgErr && item.imageUrl
+          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${item.imageUrl})`
+          : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         padding: wide ? '18px 20px' : '20px 14px',
         textAlign: 'center',
         userSelect: 'none',
         display: 'flex',
         flexDirection: wide ? 'row' : 'column',
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 120,
         gap: wide ? 14 : 8,
-        boxShadow: isSelected ? '0 4px 20px rgba(212,83,126,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+        boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+        transition: 'all 0.2s ease',
+        color: 'white',
+        position: 'relative',
       }}
     >
+      {item.imageUrl && !imgErr && (
+        <img src={item.imageUrl} alt="" style={{ display: 'none' }} onError={() => setImgErr(true)} />
+      )}
       {/* Rose checkmark badge springs in on select */}
       <div className="check-badge-rose" style={{
         position: 'absolute', top: 8, right: 8,
         width: 22, height: 22, borderRadius: '50%',
-        background: '#D4537E', color: 'white',
+        background: '#C9A84C', color: '#111',
         fontSize: 12, fontWeight: 800,
         alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(212,83,126,0.4)',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
         display: isSelected ? 'flex' : 'none',
         animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
         zIndex: 2
-      }}></div>
+      }}>✓</div>
 
       <span className="sel-card-icon card-icon" style={{ fontSize: wide ? 28 : 32 }}>{item.icon}</span>
       <div>
-        <div className="card-label" style={{ fontWeight: 700, fontSize: 13, color: isSelected ? '#B83A64' : '#111', ...FONT }}>
+        <div className="card-label" style={{ fontWeight: 700, fontSize: 16, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)', ...FONT }}>
           {item.label}
         </div>
         {item.desc && (
-          <div className="card-desc" style={{ fontSize: 11, color: isSelected ? '#B83A64' : '#888', marginTop: 3, ...FONT }}>
+          <div className="card-desc" style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, ...FONT }}>
             {item.desc}
           </div>
         )}

@@ -87,6 +87,36 @@ body {
   line-height: 1.6;
 }
 
+/* Ambient bubbles + floating emojis (applies to all tabs) */
+.ambient-effects {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.ambient-bubble-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.96;
+}
+
+.ambient-emoji-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.ambient-float-emoji {
+  position: absolute;
+  font-size: 1.55rem;
+  line-height: 1;
+  filter: drop-shadow(0 6px 10px rgba(212, 83, 126, 0.16));
+  opacity: 0.5;
+  will-change: transform, left, top;
+}
+
 h1, h2, h3 { font-family: 'EB Garamond', serif; }
 
 /* Scrollbar */
@@ -416,6 +446,23 @@ h1, h2, h3 { font-family: 'EB Garamond', serif; }
   /* Reduce heading sizes */
   h1 { font-size: 1.6rem !important; }
   h2 { font-size: 1.2rem !important; }
+}
+
+@media (max-width: 900px) {
+  .ambient-float-emoji {
+    font-size: 1.3rem;
+    opacity: 0.42;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-bubble-canvas {
+    opacity: 0.35;
+  }
+
+  .ambient-float-emoji {
+    opacity: 0.3;
+  }
 }
 
 /* ── Premium card selection system ──────────────────────────────────────────── */

@@ -65,19 +65,58 @@ export function Tab6Sundries() {
         <div className="section-title"> Room Basket Tier</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
           {[
-            { id:'luxury',   emoji:'', label:'Luxury',   rate:'₹2,500/room' },
-            { id:'standard', emoji:'', label:'Standard', rate:'₹800/room' },
-            { id:'minimal',  emoji:'', label:'Minimal',  rate:'₹300/room' },
+            { id:'luxury',   emoji:'', label:'Luxury',   rate:'₹2,500/room', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
+            { id:'standard', emoji:'', label:'Standard', rate:'₹800/room', imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+            { id:'minimal',  emoji:'', label:'Minimal',  rate:'₹300/room', imageUrl: 'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#475569' },
           ].map(opt => (
+            (() => {
+              const selected = wedding.room_basket_budget === opt.id
+              return (
             <div key={opt.id} onClick={() => { update('room_basket_budget', opt.id); scrollToNextSection('sundries-main', 420) }}
-              style={{ border:`2px solid ${wedding.room_basket_budget===opt.id ? C.amber : C.sky}`,
-                borderRadius:14, padding:18, textAlign:'center', cursor:'pointer',
-                background: wedding.room_basket_budget===opt.id ? '#fffbea' : 'white',
-                transition:'all 0.2s' }}>
+              style={{
+                border: selected ? '2px solid #C9A84C' : '2px solid transparent',
+                borderRadius:12,
+                padding:18,
+                textAlign:'center',
+                cursor:'pointer',
+                backgroundColor: opt.fallbackColor,
+                backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transition:'all 0.2s ease',
+                boxShadow: selected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+                minHeight: 120,
+                position: 'relative',
+                color: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+              {selected && (
+                <span style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  width: 22,
+                  height: 22,
+                  borderRadius: '50%',
+                  background: '#C9A84C',
+                  color: '#111',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 800,
+                  fontSize: 12,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                }}>✓</span>
+              )}
               <div style={{ fontSize:34 }}>{opt.emoji}</div>
-              <div style={{ fontWeight:700, marginTop:6, fontSize:15, color:C.primary }}>{opt.label}</div>
-              <div style={{ fontSize:12, color:C.blue, fontWeight:700, marginTop:2 }}>{opt.rate}</div>
+              <div style={{ fontWeight:700, marginTop:6, fontSize:16, color:'#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{opt.label}</div>
+              <div style={{ fontSize:12, color:'rgba(255,255,255,0.85)', fontWeight:700, marginTop:2 }}>{opt.rate}</div>
             </div>
+              )
+            })()
           ))}
         </div>
       </div>
