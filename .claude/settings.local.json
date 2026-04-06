@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(find /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/decor_dataset -type f -name *.py -o -name *.json -o -name *.pkl -o -name *.pt -o -name *.h5)",
+      "Bash(ls -la /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/decor_dataset/data/images/*/)",
+      "Bash(grep -r \"import.*train\\\\|from.*train\\\\|from.*ml\" /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/backend --include=*.py)",
+      "Bash(ls -1 /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/decor_dataset/data/embeddings/*.npy)",
+      "Bash(python -c \":*)",
+      "Bash(wc -l /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/frontend/src/pages/*.jsx /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/frontend/src/components/*.jsx /c/Users/ELCOT/Downloads/shaadi-ai-deploy/shaadi-ai/frontend/src/context/WeddingContext.jsx)",
+      "Bash(.venv/Scripts/pip.exe install:*)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn main:app --host 0.0.0.0 --port 8000)",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(curl -s http://localhost:8000/)",
+      "Bash(kill %1)",
+      "Bash(powershell -NonInteractive -Command ':*)",
+      "Bash(.venv/Scripts/python.exe -m uvicorn main:app --port 8001)",
+      "Bash(curl -s -X POST http://localhost:8001/api/decor/predict-legacy -H 'Content-Type: application/json' -d '{\"function_type\":\"Mandap\",\"style\":\"Romantic\",\"complexity\":\"High\",\"image_seed\":42}')",
+      "Bash(python -c \"import os; print\\(len\\(os.listdir\\('decor_dataset/data/images'\\)\\)\\)\")",
+      "Bash(python -c \"from routers import budget, decor, admin\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); from routers import budget, decor, admin, food, artists, logistics, sundries\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); import models\")",
+      "Bash(python -c \"import sqlalchemy; print\\(sqlalchemy.__version__\\)\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); import database; import models; from routers import budget,decor,admin,food,artists,logistics,sundries\")",
+      "Bash(python -c \"import sys; sys.path.insert\\(0,'backend'\\); import database; import models; from routers import budget,decor,admin,food,artists,logistics,sundries; print\\('OK - zero ImportError'\\)\")"
+    ]
+  }
+}
