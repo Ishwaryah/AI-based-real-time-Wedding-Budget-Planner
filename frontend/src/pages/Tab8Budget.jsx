@@ -136,6 +136,131 @@ function PieChart({ items }) {
   )
 }
 
+// ─── Budget Bar Chart (Vertical) ──────────────────────────────────────────────
+function BudgetBarChart({ budget, wedding, tracker }) {
+  const canvasRef = useRef(null)
+  const [tooltip, setTooltip] = useState(null)
+  const barsRef   = useRef([])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas || !budget) return
+    const ctx = canvas.getContext('2d')
+    const actualTotal = (tracker || []).reduce((s, i) => s + i.actual, 0)
+    
+    // Data setup
+    const data = [
+      { label: 'Budget',    value: wedding.total_budget, color: '#023047' },
+      { label: 'Estimated', value: budget.total.mid,     color: '#C9A84C' },
+      { label: 'Low',       value: budget.total.low,     color: '#059669' },
+      { label: 'High',      value: budget.total.high,    color: '#DC2626' },
+      { label: 'Actual',    value: actualTotal,          color: '#1D4ED8' },
+    ].filter(d => d.value > 0)
+
+    if (!data.length) return
+
+    const maxVal = Math.max(...data.map(d => d.value)) * 1.1 || 1000000
+    const w = 400, h = 220
+    const padL = 50, padR = 20, padT = 30, padB = 40
+    const chartW = w - padL - padR
+    const chartH = h - padT - padB
+
+    ctx.clearRect(0, 0, w, h)
+
+    // Y Axis labels
+    ctx.strokeStyle = '#F3F4F6'
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (chartH / 4) * i
+      const val = maxVal - (maxVal / 4) * i
+      ctx.moveTo(padL, y)
+      ctx.lineTo(w - padR, y)
+      
+      ctx.fillStyle = '#9CA3AF'
+      ctx.font = '9px sans-serif'
+      ctx.textAlign = 'right'
+      ctx.fillText(`₹${(val / 100000).toFixed(1)}L`, padL - 8, y + 3)
+    }
+    ctx.stroke()
+
+    // Bars
+    const barW = Math.min(36, (chartW / data.length) * 0.7)
+    const spacing = (chartW / data.length)
+    const bars = []
+
+    data.forEach((d, i) => {
+      const bh = (d.value / maxVal) * chartH
+      const bx = padL + spacing * i + (spacing - barW) / 2
+      const by = padT + chartH - bh
+
+      ctx.fillStyle = d.color
+      // Draw bar
+      ctx.beginPath()
+      if (ctx.roundRect) {
+        ctx.roundRect(bx, by, barW, bh, [4, 4, 0, 0])
+      } else {
+        ctx.rect(bx, by, barW, bh)
+      }
+      ctx.fill()
+
+      // X Labels
+      ctx.fillStyle = '#6B7280'
+      ctx.font = 'bold 9px sans-serif'
+      ctx.textAlign = 'center'
+      ctx.fillText(d.label, bx + barW / 2, h - padB + 16)
+
+      bars.push({ x: bx, y: by, w: barW, h: bh, item: d })
+    })
+    barsRef.current = bars
+  }, [budget, wedding.total_budget, tracker])
+
+  const handleMouseMove = (e) => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const rect = canvas.getBoundingClientRect()
+    // Scale coordinate mapping
+    const scaleX = canvas.width / rect.width
+    const scaleY = canvas.height / rect.height
+    const mx = (e.clientX - rect.left) * scaleX
+    const my = (e.clientY - rect.top) * scaleY
+
+    for (const bar of barsRef.current) {
+      if (mx >= bar.x && mx <= bar.x + bar.w && my >= bar.y && my <= bar.y + bar.h) {
+        setTooltip({
+          label: bar.item.label,
+          value: formatRupees(bar.item.value),
+          color: bar.item.color,
+          x: (e.clientX - rect.left),
+          y: (e.clientY - rect.top)
+        })
+        return
+      }
+    }
+    setTooltip(null)
+  }
+
+  return (
+    <div style={{ position:'relative', borderTop:'1px solid #F3F4F6', pt:20, width:'100%' }}>
+      <div style={{ fontSize:13, fontWeight:800, color:'#111', marginBottom:12, marginTop:20, textAlign:'center' }}>
+        Budget vs Estimate Comparison
+      </div>
+      <canvas ref={canvasRef} width={400} height={220} 
+        style={{ width:'100%', height:'auto', maxWidth:400, display:'block', margin:'0 auto', cursor:'help' }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => setTooltip(null)} />
+      {tooltip && (
+        <div style={{ position:'absolute', left: tooltip.x + 10, top: tooltip.y - 40,
+          background:'#023047', color:'#fff', padding:'6px 12px', borderRadius:8,
+          fontSize:11, fontWeight:700, pointerEvents:'none', whiteSpace:'nowrap',
+          boxShadow:'0 8px 24px rgba(0,0,0,0.3)', zIndex:99, borderLeft:`4px solid ${tooltip.color}` }}>
+          {tooltip.label}: <span style={{ color:'#FDE68A' }}>{tooltip.value}</span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Confidence Gauge ─────────────────────────────────────────────────────────
 function ConfidenceBar({ score }) {
   const pct   = Math.round(score * 100)
@@ -198,6 +323,7 @@ export default function Tab8Budget() {
   const [logActualVal,  setLogActualVal]  = useState({})   // {category: string}
   const [loggedCats,    setLoggedCats]    = useState(new Set())
   const [loggingCat,    setLoggingCat]    = useState(null)
+  const [budget_tracker, setBudgetTracker] = useState([]) // [{ category, actual }]
   const [toast,         setToast]         = useState(null) // {msg, type}
 
   const showToast = (msg, type = 'success') => {
@@ -234,6 +360,7 @@ export default function Tab8Budget() {
       if (!res.ok) { showToast(data.detail || 'Error logging actual cost', 'error'); return }
       showToast(data.message || 'AI model updated!', 'success')
       setLoggedCats(prev => new Set([...prev, category]))
+      setBudgetTracker(prev => [...prev, { category, actual }])
       setLogActualOpen(prev => ({ ...prev, [category]: false }))
       await fetchRlStats()
     } catch {
@@ -726,6 +853,9 @@ export default function Tab8Budget() {
           <div style={{ fontSize:11, color:'var(--muted)', marginTop:8 }}>
             Hover over the chart for details · Values shown are Mid estimate
           </div>
+
+          <div style={{ height:1, background:'#F3F4F6', margin:'24px 0 0 0' }} />
+          <BudgetBarChart budget={budget} wedding={wedding} tracker={budget_tracker} />
         </div>
 
         {/* ── Detailed Cost Breakdown Table ── */}
