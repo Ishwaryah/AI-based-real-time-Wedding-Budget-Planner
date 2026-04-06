@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Request, Depends, HTTPException
 from fastapi.responses import Response
 from pydantic import BaseModel, validator, root_validator
 from typing import Optional
@@ -24,18 +24,32 @@ class LogActualPayload(BaseModel):
     actual: float
 
 @router.post("/calculate")
-def calculate_budget(payload: ConfigPayload):
-    return calculate_full_budget(payload.data)
+async def calculate_budget(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    data = body.get("data", body) if isinstance(body, dict) else {}
+    return calculate_full_budget(data)
 
 @router.post("/optimize")
-def optimize_budget(payload: ConfigPayload):
-    data = payload.data
-    target = data.get("target_budget", 0)
+async def optimize_budget(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    data = body.get("data", body) if isinstance(body, dict) else {}
+    target = data.get("target_budget", 0) if isinstance(data, dict) else 0
     return run_pso_optimizer(data, target)
 
 @router.post("/scenarios")
-def get_scenarios(payload: ConfigPayload):
-    base       = calculate_full_budget(payload.data)
+async def get_scenarios(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    data = body.get("data", body) if isinstance(body, dict) else {}
+    base       = calculate_full_budget(data)
     base_total = base["total"]
     base_items = base["items"]
 
@@ -48,9 +62,9 @@ def get_scenarios(payload: ConfigPayload):
          "venue_type": "Banquet Hall", "food_tier": "Standard", "hotel_tier": "4-star"},
         {"name": "Standard", "multiplier": 1.00,
          "description": "Full celebration as planned",
-         "venue_type": payload.data.get("venue_type", "Banquet Hall"),
-         "food_tier":  payload.data.get("food_budget_tier", "High"),
-         "hotel_tier": payload.data.get("hotel_tier", "4-star")},
+         "venue_type": data.get("venue_type", "Banquet Hall"),
+         "food_tier":  data.get("food_budget_tier", "High"),
+         "hotel_tier": data.get("hotel_tier", "4-star")},
         {"name": "Luxury", "multiplier": 1.40,
          "description": "Grand affair — no compromises",
          "venue_type": "Palace / Heritage Hotel", "food_tier": "Luxury", "hotel_tier": "5-star"},
@@ -165,9 +179,15 @@ def finalise_budget(payload: Dict[str, Any] = {}):
     return {"success": True, "message": "Budget finalised"}
 
 @router.post("/export-pdf")
-def export_pdf(payload: ConfigPayload):
+async def export_pdf(request: Request):
     """Generate a formatted PDF budget report."""
     try:
+        try:
+            body = await request.json()
+        except:
+            body = {}
+        data = body.get("data", body) if isinstance(body, dict) else {}
+        
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import cm
@@ -176,7 +196,6 @@ def export_pdf(payload: ConfigPayload):
         from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
         import io
 
-        data = payload.data
         budget = calculate_full_budget(data)
 
         buf = io.BytesIO()
@@ -321,7 +340,7 @@ def export_pdf(payload: ConfigPayload):
 
     except ImportError:
         # ReportLab not installed — return plain text fallback
-        data2 = payload.data
+        data2 = data
         budget2 = calculate_full_budget(data2)
         def r(n): return f"Rs.{int(float(n or 0)):,}"
         lines = ["WEDDINGBUDGET.AI — WEDDING BUDGET REPORT", "="*50,

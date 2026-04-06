@@ -345,8 +345,8 @@ export default function Tab1Style() {
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {EVENT_EMOJIS.map(em => (
-                <button key={em} onClick={() => setNewEventEmoji(em)}
+              {EVENT_EMOJIS.map((em, index) => (
+                <button key={index} onClick={() => setNewEventEmoji(em)}
                   style={{
                     width: 30, height: 30,
                     border: `1.5px solid ${newEventEmoji === em ? '#D4537E' : '#EBEBEB'}`,
