@@ -12,29 +12,10 @@ from sqlalchemy.orm import Session
 
 router = APIRouter()
 
-class ConfigPayload(BaseModel):
-    data: dict
+from typing import Any, Dict
 
-    @root_validator(skip_on_failure=True)
-    def validate_calculate_fields(cls, values):
-        d = values.get("data") or {}
-        guests = d.get("total_guests")
-        if guests is not None:
-            try:
-                guests = int(guests)
-            except (TypeError, ValueError):
-                raise ValueError("total_guests must be an integer")
-            if guests < 1 or guests > 10000:
-                raise ValueError("total_guests must be between 1 and 10000")
-        budget = d.get("budget")
-        if budget is not None:
-            try:
-                budget = float(budget)
-            except (TypeError, ValueError):
-                raise ValueError("budget must be a number")
-            if budget < 10000:
-                raise ValueError("budget must be at least 10000")
-        return values
+class ConfigPayload(BaseModel):
+    data: Dict[str, Any] = {}
 
 class LogActualPayload(BaseModel):
     session_id: str
@@ -177,6 +158,11 @@ def get_rl_multipliers(db: Session = Depends(get_db)):
         }
     }
 
+
+
+@router.post("/finalise")
+def finalise_budget(payload: Dict[str, Any] = {}):
+    return {"success": True, "message": "Budget finalised"}
 
 @router.post("/export-pdf")
 def export_pdf(payload: ConfigPayload):

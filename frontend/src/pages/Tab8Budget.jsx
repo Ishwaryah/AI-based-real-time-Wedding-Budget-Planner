@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWedding, formatRupees } from '../context/WeddingContext'
 import { API_BASE as API } from '../utils/config'
@@ -749,7 +749,7 @@ export default function Tab8Budget() {
                   const hasSubs   = (vals.sub_items||[]).length > 0
                   const isLogged  = loggedCats.has(name)
                   const isLogOpen = logActualOpen[name]
-                  return (<>
+                  return (<React.Fragment key={name}>
                     <tr key={name} style={{ background: ri%2===0?'white':'var(--ivory)',
                       cursor: hasSubs?'pointer':'default' }}
                       onClick={() => hasSubs && toggleRow(name)}>
@@ -837,7 +837,7 @@ export default function Tab8Budget() {
                         <td />
                       </tr>
                     ))}
-                  </>)
+                  </React.Fragment>)
                 })}
                 <tr style={{ background:'var(--primary-dark)', color:'white' }}>
                   <td colSpan={2} style={{ padding:'14px 12px', fontFamily:'EB Garamond,serif',
@@ -1111,7 +1111,7 @@ export default function Tab8Budget() {
               <span>Particles: <b>{optimResult.particles}</b></span>
               <span>Iterations: <b>{optimResult.iterations}</b></span>
             </div>
-          </>)}
+          </React.Fragment>)}
         </div>
 
         {/* ── RL Explanation Card ── */}
@@ -1194,7 +1194,7 @@ https://wedddingbudget-ai.vercel.app`
           </div>
         </div>
 
-      </>)}
+      </React.Fragment>)}
 
       <AnimatePresence>
         {submitted && (
