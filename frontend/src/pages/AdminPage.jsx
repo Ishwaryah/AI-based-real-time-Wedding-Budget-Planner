@@ -525,14 +525,92 @@ function DecorLabelsTab() {
   )
 }
 
-// ── Tab: Settings ──────────────────────────────────────────────────────────────
-function SettingsTab({ onLogout }) {
-  const [data, setData]    = useState(null)
+// ── Tab: Budget Rules ──────────────────────────────────────────────────────────
+function BudgetRulesTab() {
+  const [rules, setRules] = useState(null)
   const [toast, showToast] = useToast()
 
   useEffect(() => {
-    apiFetch('/contingency').then(setData).catch(e => showToast(e.message, false))
+    apiFetch('/budget-rules').then(setRules).catch(e => showToast(e.message, false))
   }, [])
+
+  const save = async () => {
+    try {
+      await apiFetch('/budget-rules', { method: 'PUT', body: JSON.stringify(rules) })
+      showToast('Budget rules saved')
+    } catch (e) { showToast(e.message, false) }
+  }
+
+  const update = (section, key, val) => {
+    setRules(prev => ({
+      ...prev,
+      [section]: { ...prev[section], [key]: section === 'wedding_type_base' ? parseInt(val || 0) : parseFloat(val || 0) }
+    }))
+  }
+
+  if (!rules) return <Card><div style={{ color: '#888', fontSize: 13 }}>Loading…</div></Card>
+
+  return (
+    <Card>
+      {toast && <Toast {...toast} />}
+      <SectionTitle> Budget Multipliers & Base Costs</SectionTitle>
+
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: C.blue, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Wedding Type Base Costs (₹)</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+          {Object.entries(rules.wedding_type_base).map(([k, v]) => (
+            <div key={k}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 4 }}>{k}</label>
+              <input type="number" value={v} onChange={e => update('wedding_type_base', k, e.target.value)} style={inputStyle} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: C.blue, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Hotel Tier Multipliers</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+          {Object.entries(rules.hotel_tier_multiplier).map(([k, v]) => (
+            <div key={k}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 4 }}>{k}</label>
+              <input type="number" step="0.1" value={v} onChange={e => update('hotel_tier_multiplier', k, e.target.value)} style={inputStyle} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontWeight: 700, fontSize: 14, color: C.blue, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Venue Type Multipliers</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16 }}>
+          {Object.entries(rules.venue_type_multiplier).map(([k, v]) => (
+            <div key={k}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#666', display: 'block', marginBottom: 4 }}>{k}</label>
+              <input type="number" step="0.1" value={v} onChange={e => update('venue_type_multiplier', k, e.target.value)} style={inputStyle} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <Btn onClick={save} color={C.green} style={{ marginTop: 8 }}>Save All Budget Rules</Btn>
+    </Card>
+  )
+}
+
+// ── Tab: Settings ──────────────────────────────────────────────────────────────
+function SettingsTab({ onLogout }) {
+  const [data, setData]    = useState(null)
+  const [status, setStatus] = useState(null)
+  const [training, setTraining] = useState(false)
+  const [toast, showToast] = useToast()
+
+  const loadStatus = useCallback(() => {
+    apiFetch('/model-status').then(setStatus).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    apiFetch('/contingency').then(setData).catch(e => showToast(e.message, false))
+    loadStatus()
+  }, [loadStatus])
 
   const save = async () => {
     try {
@@ -546,6 +624,19 @@ function SettingsTab({ onLogout }) {
       setData(updated)
       showToast('Settings saved')
     } catch (e) { showToast(e.message, false) }
+  }
+
+  const retrain = async () => {
+    setTraining(true)
+    try {
+      const res = await apiFetch('/decor/retrain', { method: 'POST' })
+      showToast(`Model retrained successfully! Accuracy: ${res.accuracy || 'N/A'}`)
+      loadStatus()
+    } catch (e) {
+      showToast(e.message || 'Retraining failed', false)
+    } finally {
+      setTraining(false)
+    }
   }
 
   return (
@@ -582,6 +673,38 @@ function SettingsTab({ onLogout }) {
       </Card>
 
       <Card>
+        <SectionTitle> Model Status</SectionTitle>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 13, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
+            <span style={{ color: '#666', fontWeight: 500 }}>Last Trained</span>
+            <span style={{ fontWeight: 700, color: C.navy }}>
+              {status?.last_trained ? new Date(status.last_trained).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' }) : 'Never'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
+            <span style={{ color: '#666', fontWeight: 500 }}>Training Samples</span>
+            <span style={{ fontWeight: 700, color: C.navy }}>{status?.samples || 0}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f0f0f0', paddingBottom: 8 }}>
+            <span style={{ color: '#666', fontWeight: 500 }}>CV Accuracy (R²)</span>
+            <span style={{ fontWeight: 700, color: status?.accuracy > 0.7 ? C.green : C.orange }}>
+              {status?.accuracy != null ? status.accuracy : 'N/A'}
+            </span>
+          </div>
+        </div>
+        <div style={{ position: 'relative' }}>
+          <Btn onClick={retrain} disabled={training} color={C.amber} textColor={C.navy}>
+            {training ? 'Training Model…' : '↺ Retrain Model'}
+          </Btn>
+          {training && (
+            <div style={{ marginTop: 8, fontSize: 11, color: C.blue, fontWeight: 600 }}>
+              Live progress: Extracting features & fitting regressor...
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <Card>
         <SectionTitle> Session</SectionTitle>
         <div style={{ fontSize: 13, color: '#555', marginBottom: 14 }}>JWT token expires 24 hours after login. Logging out clears the session token.</div>
         <Btn onClick={onLogout} color={C.red}>Logout</Btn>
@@ -596,6 +719,7 @@ const TABS = [
   { id: 'fb',       label: ' F&B Rates' },
   { id: 'logistics',label: ' Logistics' },
   { id: 'decor',    label: ' Decor Labels' },
+  { id: 'rules',    label: ' Budget Rules' },
   { id: 'settings', label: ' Settings' },
 ]
 
@@ -655,6 +779,7 @@ export default function AdminPage({ onClose }) {
         {activeTab === 'fb'        && <FBRatesTab />}
         {activeTab === 'logistics' && <LogisticsTab />}
         {activeTab === 'decor'     && <DecorLabelsTab />}
+        {activeTab === 'rules'     && <BudgetRulesTab />}
         {activeTab === 'settings'  && <SettingsTab onLogout={logout} />}
       </div>
     </div>

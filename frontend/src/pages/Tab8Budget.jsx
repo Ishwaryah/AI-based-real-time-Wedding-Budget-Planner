@@ -749,7 +749,7 @@ export default function Tab8Budget() {
                   const isLogged  = loggedCats.has(name)
                   const isLogOpen = logActualOpen[name]
                   return (<React.Fragment key={name}>
-                    <tr key={name} style={{ background: ri%2===0?'white':'var(--ivory)',
+                    <tr style={{ background: ri%2===0?'white':'var(--ivory)',
                       cursor: hasSubs?'pointer':'default' }}
                       onClick={() => hasSubs && toggleRow(name)}>
                       <td style={{ padding:'10px 10px', fontWeight:700 }}>

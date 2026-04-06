@@ -83,6 +83,16 @@ class DecorLabel(BaseModel):
     seed_cost: float
 
 
+class BudgetRules(BaseModel):
+    wedding_type_base: dict[str, int]
+    hotel_tier_multiplier: dict[str, float]
+    venue_type_multiplier: dict[str, float]
+
+
+# ── File paths ────────────────────────────────────────────────────────────────
+RULES_JSON = os.path.join(_BASE, "data", "budget_rules.json")
+
+
 # ── Auth endpoint (public) ─────────────────────────────────────────────────────
 @router.post("/login")
 def login(body: LoginRequest):
@@ -258,6 +268,39 @@ def label_decor_image(body: DecorLabel):
     }
     _write_labels(labels)
     return {"ok": True, "filename": body.filename}
+
+
+# ── Budget Rules ───────────────────────────────────────────────────────────────
+@router.get("/budget-rules", dependencies=[Depends(require_admin)])
+def get_budget_rules():
+    if not os.path.exists(RULES_JSON):
+        return {}
+    with open(RULES_JSON, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+@router.put("/budget-rules", dependencies=[Depends(require_admin)])
+def update_budget_rules(rules: BudgetRules):
+    with open(RULES_JSON, "w", encoding="utf-8") as f:
+        json.dump(rules.model_dump(), f, indent=2)
+    return {"ok": True}
+
+
+# ── Model Status ────────────────────────────────────────────────────────────────
+@router.get("/model-status", dependencies=[Depends(require_admin)])
+def get_model_status():
+    from ml.decor_model import get_predictor, MODEL_PATH
+    p = get_predictor()
+    last_trained = None
+    if os.path.exists(MODEL_PATH):
+        # Use OS file modification time as training timestamp
+        last_trained = datetime.fromtimestamp(os.path.getmtime(MODEL_PATH)).isoformat() + "Z"
+
+    return {
+        "last_trained": last_trained,
+        "samples": p.n_samples,
+        "accuracy": round(p.cv_score, 3) if p.cv_score is not None else None,
+    }
 
 
 # ── POST /decor/retrain — retrain Decor ML model ──────────────────────────────
