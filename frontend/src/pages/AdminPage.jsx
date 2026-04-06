@@ -591,8 +591,8 @@ function BudgetTrackerTab() {
   const submitActual = async (category, estimated, actual) => {
     const trimmed = String(category || '').trim()
     if (!trimmed) { setStatus({ error: 'Enter a category name' }); return }
-    const est = Number(estimated)
-    const act = Number(actual)
+    const est = parseFloat(String(estimated).replace(/[^\d.-]/g, '')) || 0
+    const act = parseFloat(String(actual).replace(/[^\d.-]/g, '')) || 0
     if (!est || est <= 0) { setStatus({ error: 'Enter a valid AI estimate' }); return }
     if (!act || act <= 0) { setStatus({ error: 'Enter a valid actual cost' }); return }
 
