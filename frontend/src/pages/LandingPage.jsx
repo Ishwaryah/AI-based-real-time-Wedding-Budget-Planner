@@ -556,10 +556,6 @@ export default function LandingPage({ onEnter }) {
   }, [statsAnimated])
 
   const enter = (role) => {
-    if (role === 'admin') {
-      const pwd = prompt('Enter admin password:')
-      if (pwd !== 'wedding@admin2025') { alert('Incorrect password'); return }
-    }
     setFading(true)
     setTimeout(() => onEnter(role), 450)
   }
@@ -644,14 +640,14 @@ export default function LandingPage({ onEnter }) {
           <div style={S.headerActions}>
             <button
               style={S.btnGhost}
-              onClick={() => enter('admin')}
+              onClick={(e) => { e.preventDefault(); enter('admin'); }}
               className="btn-ghost"
             >
               Admin
             </button>
             <button
               style={S.btnPrimary}
-              onClick={() => enter('client')}
+              onClick={(e) => { e.preventDefault(); enter('client'); }}
               className="btn-primary"
             >
               Start Planning

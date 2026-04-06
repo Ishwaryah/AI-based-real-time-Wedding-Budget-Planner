@@ -299,13 +299,13 @@ function ConfidenceBar({ score }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Tab8Budget() {
-  const { wedding } = useWedding()
+  const { wedding, update } = useWedding()
 
   const [budget,      setBudget]      = useState(null)
   const [scenarios,   setScenarios]   = useState(null)
   const [loading,     setLoading]     = useState(false)
-  const [scenLoading, setScenLoading] = useState(false)
-  const [optimizing,  setOptimizing]  = useState(false)
+  const [psoResults, setPsoResults] = useState([])
+  const [optimizing, setOptimizing] = useState(false)
   const [optimResult, setOptimResult] = useState(null)
   const [targetBudget,setTargetBudget]= useState('')
   const [exporting,   setExporting]   = useState(false)
@@ -318,6 +318,25 @@ export default function Tab8Budget() {
   const [rlStats,       setRlStats]       = useState(null)
   const [budget_tracker, setBudgetTracker] = useState([]) // [{ category, actual }]
   const [toast,         setToast]         = useState(null) // {msg, type}
+
+  const handleApplyOptimization = (category, optimizedValue) => {
+    const current = budget?.items?.[category]?.mid || 0
+    if (current === 0) return
+    const ratio = optimizedValue / current
+    const newMultipliers = { ...wedding.cost_multipliers, [category]: (wedding.cost_multipliers[category] || 1) * ratio }
+    update('cost_multipliers', newMultipliers)
+    const TAB_MAPPING = {
+      'Venue': 1,
+      'Accommodation': 1,
+      'Food & Beverages': 3,
+      'Decor & Design': 2,
+      'Artists & Entertainment': 4,
+      'Logistics & Transport': 6,
+      'Sundries & Basics': 5,
+    }
+    const targetTab = TAB_MAPPING[category] ?? 7
+    window.dispatchEvent(new CustomEvent('weddingGoToTab', { detail: targetTab }))
+  }
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type })
@@ -335,7 +354,6 @@ export default function Tab8Budget() {
 
   useEffect(() => { fetchRlStats() }, [])
 
-  // Count-up for the "Most Likely" total
   const midTotal = budget?.total?.mid || 0
   const displayTotal = useCountUp(midTotal, 800)
 
@@ -345,40 +363,39 @@ export default function Tab8Budget() {
     return next
   })
 
-  // ── Calculate budget ──────────────────────────────────────────────────────
   const calculateBudget = async () => {
-    setLoading(true); setScenLoading(true)
+    setLoading(true)
     try {
-      const payload = { data: wedding || {} }
-      console.log('Payload:', payload)
-      const budRes = await fetch(`${API}/budget/calculate`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ data: wedding || {} })
-      })
-      if (!budRes.ok) {
-        throw new Error(`API returned status ${budRes.status}`)
-      }
-      const budData = await budRes.json()
-      if (!budData || !budData.total) throw new Error('Invalid response')
-      setBudget(budData)
-      // Fetch scenarios in parallel
-      try {
-        const scenRes = await fetch(`${API}/budget/scenarios`, {
+      // Fetch budget and scenarios in parallel
+      const [calcRes, scenRes] = await Promise.all([
+        fetch(`${API}/budget/calculate`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ data: wedding || {} })
+        }),
+        fetch(`${API}/budget/scenarios`, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ data: wedding || {} })
         })
-        setScenarios(await scenRes.json())
-      } catch (err) {
-        console.error('Scenarios API failed:', err)
-        setScenarios(null)
+      ])
+      const data = await calcRes.json()
+      const scenData = await scenRes.json()
+      if (data.items) {
+        Object.keys(wedding.cost_multipliers || {}).forEach(cat => {
+          const m = wedding.cost_multipliers[cat] || 1
+          if (m !== 1 && data.items[cat]) {
+            data.items[cat].mid *= m
+            data.items[cat].low *= m
+            data.items[cat].high *= m
+          }
+        })
       }
-    } catch (err) {
-      console.error('calculateBudget failed. Using offline estimate.', err)
-      showToast('Backend unavailable, using offline estimate', 'error')
-      // Offline fallback
+      setBudget(data)
+      setScenarios(scenData)
+    } catch (e) {
+      console.error('Budget calculation failed', e)
       const total_guests = wedding.total_guests || 200
       const events       = wedding.events || []
-      const base         = 2500000
+      const logisticsBase = (wedding.logistics_total || 0)
       const items = {
         'Wedding Type Base':       { low:800000,   mid:2500000,  high:8000000,  note:wedding.wedding_type||'Hindu', sub_items:[] },
         'Events & Ceremonies':     { low:events.length*50000,  mid:events.length*200000, high:events.length*700000, note:events.join(', ')||'—', sub_items:events.map(e=>({name:e,low:50000,mid:200000,high:700000})) },
@@ -387,61 +404,51 @@ export default function Tab8Budget() {
         'Food & Beverages':        { low:total_guests*500*Math.max(1,events.length), mid:total_guests*1100*Math.max(1,events.length), high:total_guests*3000*Math.max(1,events.length), note:wedding.food_budget_tier||'—', sub_items:[] },
         'Decor & Design':          { low:(wedding.decor_total||0)*0.8, mid:wedding.decor_total||0, high:(wedding.decor_total||0)*1.25, note:'Selected decor', sub_items:[] },
         'Artists & Entertainment': { low:(wedding.artists_total||0)*0.9, mid:wedding.artists_total||0, high:(wedding.artists_total||0)*1.1, note:'Selected artists', sub_items:[] },
-        'Logistics & Transport':   { low:(wedding.logistics_total||0)*0.9, mid:wedding.logistics_total||0, high:(wedding.logistics_total||0)*1.2, note:'Fleet + SFX', sub_items:[] },
+        'Logistics & Transport':   { low: Math.round(logisticsBase * 0.7), mid: logisticsBase, high: Math.round(logisticsBase * 1.4), note:'Fleet + SFX', sub_items:[] },
         'Sundries & Basics':       { low:total_guests*800, mid:total_guests*1200, high:total_guests*2000, note:'Hampers, stationery, rituals', sub_items:[] },
       }
+      Object.keys(wedding.cost_multipliers || {}).forEach(cat => {
+        const m = wedding.cost_multipliers[cat] || 1
+        if (m !== 1 && items[cat]) {
+          items[cat].mid *= m
+          items[cat].low *= m
+          items[cat].high *= m
+        }
+      })
       const rMid = Object.values(items).reduce((s,i)=>s+i.mid,0)
       items['Contingency Buffer (8%)'] = { low:rMid*0.04, mid:rMid*0.08, high:rMid*0.12, note:'8% admin buffer', sub_items:[] }
       const totLow  = Object.values(items).reduce((s,i)=>s+i.low,0)
       const totMid  = Object.values(items).reduce((s,i)=>s+i.mid,0)
       const totHigh = Object.values(items).reduce((s,i)=>s+i.high,0)
       setBudget({ items, total:{low:totLow,mid:totMid,high:totHigh}, confidence_score:0.72, total_guests, events })
+      setScenarios(null)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false); setScenLoading(false)
   }
 
-  // ── PSO Optimizer ─────────────────────────────────────────────────────────
   const optimize = async () => {
-    if (!targetBudget || targetBudget < 100000) {
-      alert('Please enter a valid target budget (minimum ₹1 lakh)')
-      return
-    }
-    if (budget && targetBudget > (budget?.total?.mid || 0) * 2) {
-      alert('Target budget seems too high. Please enter a realistic amount.')
-      return
-    }
-    if (!budget) return
+    if (!targetBudget || targetBudget < 100000) return
     setOptimizing(true)
     try {
       const res  = await fetch(`${API}/budget/optimize`, {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ data: { ...wedding, target_budget: parseFloat(targetBudget) } })
       })
-      setOptimResult(await res.json())
-    } catch {
-      const current = (budget?.total?.mid || 0)
-      const target  = parseFloat(targetBudget)
-      const WEIGHTS = { 'Venue':0.25,'Food & Beverages':0.22,'Accommodation':0.15,'Decor & Design':0.18,'Artists & Entertainment':0.12,'Logistics & Transport':0.08 }
-      const category_results = {}
-      const recommendations  = []
-      for (const [cat, w] of Object.entries(WEIGHTS)) {
-        const orig  = (budget?.items?.[cat]?.mid || 0)
-        const delta = Math.round((current - target) * w)
-        const opt   = Math.max(0, orig - delta)
-        const mult  = orig ? Math.round((opt / orig) * 100) / 100 : 1
-        category_results[cat] = { original: orig, optimized: opt, delta: opt - orig, multiplier: mult }
-        if (mult < 0.85) recommendations.push(`Reduce ${cat} by ~${Math.round((1-mult)*100)}%`)
-        else if (mult > 1.15) recommendations.push(`Upgrade ${cat} by ~${Math.round((mult-1)*100)}%`)
-        else recommendations.push(`Keep ${cat} at current level — well optimised`)
-      }
-      const optimized_budget = Math.min(Math.max(0, target), current)
-      const savings = Math.max(0, current - optimized_budget)
-      setOptimResult({ optimized_budget, target_budget:target, base_budget:current, savings, category_results, recommendations, convergence:0.94, iterations:50, particles:30 })
+      const result = await res.json()
+      setOptimResult(result)
+      setPsoResults(Object.entries(result.category_results).map(([cat, v]) => ({
+        category: cat,
+        original: v.original,
+        optimized: v.optimized
+      })))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setOptimizing(false)
     }
-    setOptimizing(false)
   }
 
-  // ── Print/PDF ────────────────────────────────────────────────────────────
   const printPDF = () => {
     if (!budget) return
     const R = n => {
@@ -453,7 +460,6 @@ export default function Tab8Budget() {
       return `₹${Math.round(n).toLocaleString('en-IN')}`
     }
     
-    // XSS Mitigation: escape HTML before printing to new document
     const escapeHTML = str => {
       if (typeof str !== 'string') return str;
       return str.replace(/[&<>'"]/g, tag => 
@@ -466,7 +472,6 @@ export default function Tab8Budget() {
 
     const conf = Math.round(((budget?.confidence_score || 0)||0.72)*100)
 
-    // Build rows for the main table
     const mainRows = Object.entries((budget?.items || {})).map(([name,vals]) => {
       const pct = (budget?.total?.mid || 0) > 0 ? Math.round((vals.mid/(budget?.total?.mid || 0))*100) : 0
       const subRows = (vals.sub_items||[]).filter(s=>s.mid||s.low||s.high).map(s =>
@@ -487,40 +492,6 @@ export default function Tab8Budget() {
         <td style="padding:8px;font-size:11px;color:#888">${pct}% · ${escapeHTML(vals.note||'')}</td>
       </tr>${subRows}`
     }).join('')
-
-    // Scenario table rows
-    const scenNames  = scenarios ? Object.keys(scenarios) : []
-    const scenHdr    = scenNames.map(n => `<th style="background:#023047;color:white;padding:8px;text-align:right">${scenarios[n].icon} ${n}</th>`).join('')
-    const scenItems  = Object.keys((budget?.items || {})).map(cat => {
-      const cells = scenNames.map(n => `<td style="text-align:right;padding:6px 10px">${R(scenarios?.[n]?.items?.[cat]?.mid||0)}</td>`).join('')
-      return `<tr><td style="padding:6px 10px;font-weight:600">${cat}</td>${cells}</tr>`
-    }).join('')
-    const scenTots   = scenNames.map(n => `<td style="text-align:right;padding:8px;font-weight:800;font-size:15px;color:#C9A84C">${R(scenarios?.[n]?.total?.mid||0)}</td>`).join('')
-    const scenTable  = scenarios ? `
-      <h2>Scenario Comparison</h2>
-      <table><thead><tr><th style="background:#023047;color:white;padding:8px;text-align:left">Category</th>${scenHdr}</tr></thead>
-      <tbody>${scenItems}
-      <tr style="background:#FFF8E8"><td style="padding:8px;font-weight:800">TOTAL</td>${scenTots}</tr>
-      </tbody></table>` : ''
-
-    // PSO table
-    const psoTable = optimResult ? `
-      <h2>PSO Optimiser Results</h2>
-      <table><thead><tr>
-        <th>Category</th><th>Current</th><th>Optimised</th><th>Change</th><th>Recommendation</th>
-      </tr></thead><tbody>
-      ${Object.entries(optimResult.category_results||{}).map(([cat,v])=>`
-        <tr><td>${cat}</td>
-        <td style="text-align:right">${R(v.original)}</td>
-        <td style="text-align:right;font-weight:700">${R(v.optimized)}</td>
-        <td style="text-align:right;color:${v.delta<0?'#059669':'#DC2626'}">${v.delta<0?'↓':'↑'} ${R(Math.abs(v.delta))}</td>
-        <td style="font-size:11px">${(optimResult.recommendations||[]).find(r=>r.category===cat)?.message||''}</td>
-        </tr>`).join('')}
-      <tr style="background:#FFF8E8"><td colspan="5" style="padding:8px">
-        Target: <b>${R(optimResult.target_budget)}</b> · Optimised: <b>${R(optimResult.optimized_budget)}</b> ·
-        Savings: <b style="color:#059669">${R(Math.abs(optimResult.savings))}</b> ·
-        Convergence: <b>${Math.max(0, Math.min(100, optimResult.convergence||0)).toFixed(0)}%</b>
-      </td></tr></tbody></table>` : ''
 
     const html = `<!DOCTYPE html><html><head><title>WeddingBudget Report</title>
     <style>
@@ -581,13 +552,6 @@ export default function Tab8Budget() {
         </tr>
       </tbody>
     </table>
-
-    ${scenTable}
-    ${psoTable}
-
-    <p style="margin-top:30px;font-size:11px;color:#999;border-top:1px solid #e5e7eb;padding-top:10px">
-      This is an AI-estimated budget. Actual costs may vary by ±20%. Always confirm final figures with vendors before signing contracts.
-    </p>
     </body></html>`
 
     const w = window.open('', '_blank')
@@ -627,7 +591,6 @@ export default function Tab8Budget() {
           body: JSON.stringify({ total: budget?.total, wedding_profile: wedding })
         })
       } catch {
-        // Backend endpoint optional — continue regardless
       }
       setFinalised(true)
       setSubmitted(true)
@@ -640,12 +603,10 @@ export default function Tab8Budget() {
     label: name, value: vals.mid||0, color: ITEM_COLORS[name]||'#888'
   })).filter(i=>i.value>0) : []
 
-  const SCEN_COLORS = { Minimalist:'#059669', Modest:'#0D9488', Standard:'#1D4ED8', Luxury:'#C9A84C' }
-  const SCEN_ICONS  = { Minimalist:'', Modest:'', Standard:'', Luxury:'' }
+  const C = { primary: '#023047', blue: '#04699b', amber: '#FB8500', light: '#f8f9fa' }
 
   return (
     <div>
-      {/* ── Toast ── */}
       {toast && (
         <div style={{
           position: 'fixed', top: 20, right: 20, zIndex: 9999,
@@ -660,7 +621,6 @@ export default function Tab8Budget() {
       )}
       <style>{`@keyframes fadeInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}`}</style>
 
-      {/* ── Header ── */}
       <div className="section-card" style={{ textAlign:'center',
         background:'#ffffff', border:'1px solid #EBEBEB', borderRadius:16, padding:24 }}>
         <div style={{ fontFamily:'EB Garamond,serif', fontSize:'clamp(1.4rem,5vw,1.8rem)', fontWeight:800, marginBottom:4, color:'#111' }}>
@@ -689,14 +649,10 @@ export default function Tab8Budget() {
 
       {budget && (<>
 
-        {/* ── Confidence ── */}
         <div className="section-card">
           <ConfidenceBar score={(budget?.confidence_score || 0)||0.72} />
         </div>
 
-
-        {/* ── Total Summary Cards ── */}
-        {/* Main "Most Likely" total — large count-up display */}
         <div className="section-card" style={{
           background:'linear-gradient(135deg,#1a0828,#B83A64)',
           textAlign:'center', marginBottom:14, border:'none',
@@ -739,7 +695,6 @@ export default function Tab8Budget() {
           ))}
         </div>
 
-        {/* ── Pie Chart ── */}
         <div className="section-card">
           <div className="section-title">Budget Breakdown</div>
           <div style={{ display:'flex', gap:24, alignItems:'center', flexWrap:'wrap' }}>
@@ -772,7 +727,6 @@ export default function Tab8Budget() {
           <BudgetBarChart budget={budget} wedding={wedding} tracker={budget_tracker} />
         </div>
 
-        {/* ── Detailed Cost Breakdown Table ── */}
         <div className="section-card">
           <div className="section-title">Detailed Cost Breakdown — Every Rupee Itemised</div>
           <div style={{ overflowX:'auto' }}>
@@ -802,13 +756,6 @@ export default function Tab8Budget() {
                           {hasSubs && <span style={{ fontSize:10, color:'var(--muted)' }}>
                             {isOpen ? ' ▲' : ' ▼'}
                           </span>}
-                          {vals.rl_adjusted && (
-                            <span title={`RL-adjusted ×${vals.rl_multiplier}`} style={{
-                              fontSize:10, background:'#4F46E5', color:'#fff',
-                              padding:'1px 6px', borderRadius:10, fontWeight:700, cursor:'help' }}>
-                               RL ×{vals.rl_multiplier}
-                            </span>
-                          )}
                         </div>
                       </td>
                       <td style={{ padding:'10px 10px', color:'var(--muted)', fontSize:11 }}>{vals.note}</td>
@@ -856,123 +803,11 @@ export default function Tab8Budget() {
               </tbody>
             </table>
           </div>
-          <div style={{ fontSize:11, color:'var(--muted)', marginTop:8 }}>
-            Click any row to expand sub-item breakdown · Green = Low · Blue = Mid · Red = High
-          </div>
         </div>
 
-        {/* ── Scenario Comparison ── */}
-        <div className="section-card">
-          <div className="section-title">Scenario Comparison</div>
-          {scenLoading && <div style={{ color:'var(--muted)', fontSize:13 }}>Loading scenarios...</div>}
-
-          {/* Scenario tab buttons */}
-          {scenarios && (
-            <>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:20 }}>
-                {Object.entries(scenarios).map(([name, sc]) => {
-                  const isActive = activeScen === name
-                  return (
-                    <button key={name} onClick={() => setActiveScen(name)}
-                      style={{ padding:'12px 8px', borderRadius:12, border:`2px solid ${SCEN_COLORS[name]}`,
-                        background: isActive ? SCEN_COLORS[name] : 'white',
-                        color: isActive ? 'white' : SCEN_COLORS[name],
-                        cursor:'pointer', fontWeight:700, fontSize:12, transition:'all 0.2s' }}>
-                      <div style={{ fontSize:18, marginBottom:4 }}>{SCEN_ICONS[name]}</div>
-                      <div>{name}</div>
-                      <div style={{ fontFamily:'EB Garamond,serif', fontSize:17,
-                        fontWeight:900, marginTop:4 }}>
-                        {formatRupees(sc.total.mid)}
-                      </div>
-                      <div style={{ fontSize:10, opacity:0.8, marginTop:2 }}>mid estimate</div>
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Active scenario description */}
-              {scenarios[activeScen] && (
-                <div style={{ padding:'10px 14px', background:`${SCEN_COLORS[activeScen]}15`,
-                  borderRadius:10, border:`1.5px solid ${SCEN_COLORS[activeScen]}40`,
-                  marginBottom:16, fontSize:13 }}>
-                  <span style={{ fontWeight:700, color:SCEN_COLORS[activeScen] }}>{SCEN_ICONS[activeScen]} {activeScen}: </span>
-                  {scenarios[activeScen].description}
-                  <span style={{ marginLeft:12, color:'var(--muted)', fontSize:11 }}>
-                    Venue: {scenarios[activeScen].venue_type} · Food: {scenarios[activeScen].food_tier} · Hotel: {scenarios[activeScen].hotel_tier}
-                  </span>
-                </div>
-              )}
-
-              {/* Comparison table — all 4 side by side */}
-              <div style={{ overflowX:'auto' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ padding:'8px 10px', textAlign:'left', background:'var(--ivory-dark)',
-                        color:'var(--primary-dark)', fontWeight:700, borderBottom:'2px solid var(--primary)' }}>
-                        Category
-                      </th>
-                      {Object.keys(scenarios).map(n => (
-                        <th key={n} style={{ padding:'8px 10px', textAlign:'right',
-                          background: n===activeScen ? SCEN_COLORS[n] : 'var(--ivory-dark)',
-                          color: n===activeScen ? 'white' : SCEN_COLORS[n],
-                          fontWeight:700, borderBottom:'2px solid var(--primary)' }}>
-                          {SCEN_ICONS[n]} {n}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.keys((budget?.items || {})).map((cat, ri) => (
-                      <tr key={cat} style={{ background: ri%2===0?'white':'var(--ivory)' }}>
-                        <td style={{ padding:'7px 10px', fontWeight:600, fontSize:12 }}>
-                          <span style={{ display:'inline-block', width:8, height:8,
-                            borderRadius:2, background:ITEM_COLORS[cat]||'#888',
-                            marginRight:6 }} />{cat}
-                        </td>
-                        {Object.keys(scenarios).map(n => {
-                          const val = scenarios[n]?.items?.[cat]?.mid || 0
-                          return (
-                            <td key={n} style={{ padding:'7px 10px', textAlign:'right',
-                              color: n===activeScen ? SCEN_COLORS[n] : 'var(--primary)',
-                              fontSize: n===activeScen ? 13 : 12,
-                              fontWeight: n===activeScen ? 800 : 600 }}>
-                              {formatRupees(val)}
-                            </td>
-                          )
-                        })}
-                      </tr>
-                    ))}
-                    <tr style={{ background:'var(--primary-dark)', color:'white' }}>
-                      <td style={{ padding:'10px 10px', fontFamily:'EB Garamond,serif', fontWeight:800, fontSize:15 }}>
-                        TOTAL
-                      </td>
-                      {Object.keys(scenarios).map(n => (
-                        <td key={n} style={{ padding:'10px 10px', textAlign:'right',
-                          fontFamily:'EB Garamond,serif', fontSize: n===activeScen ? 18 : 15,
-                          fontWeight:900,
-                          color: n===activeScen ? '#FDE68A' : 'rgba(255,255,255,0.8)' }}>
-                          {formatRupees(scenarios[n]?.total?.mid||0)}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div style={{ marginTop:8, fontSize:11, color:'var(--muted)' }}>
-                All amounts are Mid estimates. Click a scenario card above to highlight it.
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* ── PSO Optimizer ── */}
         <div className="section-card" style={{ border:'2px solid #ffb703' }}>
           <div className="section-title" style={{ color:'#023047' }}>
             AI Budget Optimizer — Particle Swarm Optimization
-          </div>
-          <div style={{ fontSize:12, color:'var(--muted)', marginBottom:14 }}>
-            30 particles × 50 iterations · Adaptive inertia · Per-category reallocation
           </div>
           <div style={{ display:'flex', gap:12, alignItems:'flex-end', flexWrap:'wrap' }}>
             <div style={{ flex:1, minWidth:200 }}>
@@ -981,18 +816,7 @@ export default function Tab8Budget() {
                 min="100000" max="999999999"
                 placeholder="e.g. 3000000 (₹30L)"
                 value={targetBudget}
-                onChange={e => {
-                  const val = Math.abs(parseInt(e.target.value) || 0)
-                  setTargetBudget(val)
-                }}
-                onBlur={() => {
-                  if (targetBudget < 100000) setTargetBudget(100000)
-                }} />
-              {targetBudget > 0 && (
-                <p style={{ fontSize: '12px', color: '#888', marginTop: '4px', marginBottom: 0 }}>
-                  = ₹{(targetBudget / 100000).toFixed(1)}L
-                </p>
-              )}
+                onChange={e => setTargetBudget(Math.abs(parseInt(e.target.value) || 0))} />
             </div>
             <button onClick={optimize} disabled={optimizing || !targetBudget}
               style={{ padding:'12px 28px', borderRadius:12, border:'none', cursor:'pointer',
@@ -1002,198 +826,160 @@ export default function Tab8Budget() {
             </button>
           </div>
 
-          {optimizing && (
-            <div style={{ marginTop:16, padding:14, background:'#FFF7ED', borderRadius:10 }}>
-              <div style={{ fontSize:13, color:'#92400E', fontWeight:700, marginBottom:8 }}>
-                PSO running 30 particles × 50 iterations...
+          {psoResults.length > 0 && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: C.light }}>
+                      {['Category', 'Current (₹)', 'Optimised (₹)', 'Savings', 'Action'].map(h => (
+                        <th key={h} style={{ padding: '12px 14px', textAlign: h === 'Category' ? 'left' : 'right', fontWeight: 700, color: C.primary, fontSize: 13, borderBottom: `2.5px solid ${C.amber}` }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {psoResults.map((v, i) => {
+                      const savingsAmt = v.original - v.optimized
+                      const savingsPct = Math.round((savingsAmt / v.original) * 100)
+                      return (
+                        <tr key={v.category} style={{ borderBottom: '1px solid #e2e8f0', background: i % 2 === 0 ? 'white' : 'rgba(255,183,3,0.03)' }}>
+                          <td style={{ padding: '14px', fontWeight: 600, color: C.primary }}>{v.category}</td>
+                          <td style={{ padding: '14px', textAlign: 'right', color: '#64748b' }}>{formatRupees(v.original)}</td>
+                          <td style={{ padding: '14px', textAlign: 'right', color: C.blue, fontWeight: 700 }}>{formatRupees(v.optimized)}</td>
+                          <td style={{ padding: '14px', textAlign: 'right' }}>
+                            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 12, background: savingsAmt > 0 ? '#e8faf0' : '#fff1f2', color: savingsAmt > 0 ? '#059669' : '#e11d48', fontWeight: 700 }}>
+                              {savingsAmt > 0 ? `-${savingsPct}%` : 'Optimal'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '14px', textAlign: 'right' }}>
+                            <motion.button
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              onClick={() => handleApplyOptimization(v.category, v.optimized)}
+                              style={{
+                                padding: '6px 12px',
+                                background: 'linear-gradient(135deg, #FF9B05, #FB8500)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                boxShadow: '0 2px 8px rgba(251,133,0,0.2)'
+                              }}
+                            >
+                              Apply & Edit
+                            </motion.button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div style={{ height:8, background:'#FED7AA', borderRadius:4, overflow:'hidden' }}>
-                <div style={{ height:'100%', background:'#fb8500', borderRadius:4,
-                  animation:'pbar 1.6s ease-in-out infinite' }} />
+              <div style={{ marginTop: 24, padding: 18, background: '#f8fafc', borderRadius: 14, border: '1px dashed #cbd5e1' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: C.primary, marginBottom: 8 }}>How it works</div>
+                <div style={{ fontSize: 12, color: '#64748b', lineHeight: 1.6 }}>
+                  The AI Optimizer uses <strong>Particle Swarm Optimization (PSO)</strong> to find the ideal budget allocation based on your wedding size and type.
+                  Clicking <strong>'Apply & Edit'</strong> will calculate an optimization ratio for that category, update your global budget model, and take you directly to the relevant tab to review the itemized changes.
+                </div>
               </div>
-              <style>{`@keyframes pbar{0%{width:5%}50%{width:88%}100%{width:5%}}`}</style>
             </div>
           )}
-
-          {optimResult && (<>
-            {/* Summary cards */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginTop:16 }}>
-              {[
-                { label:'Target Budget',    value: Math.abs(optimResult.target_budget || 0),                              color:'#9D174D' },
-                { label:'Optimised Budget', value: optimResult.optimised_budget || optimResult.optimized_budget || 0,     color:'#059669' },
-                { label:'Savings',          value: Math.max(0, optimResult.savings || 0),                                 color:'#059669' },
-              ].map(s => (
-                <div key={s.label} style={{ textAlign:'center', background:'white', padding:14,
-                  borderRadius:10, border:'1.5px solid #FDE68A' }}>
-                  <div style={{ fontSize:10, color:'var(--muted)', marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontFamily:'EB Garamond,serif', fontSize:20, fontWeight:900, color:s.color }}>
-                    {formatRupees(s?.value || 0)}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Per-category table */}
-            <div style={{ marginTop:16, overflowX:'auto' }}>
-              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-                <thead>
-                  <tr style={{ background:'#023047', color:'white' }}>
-                    {['Category','Current','Optimised','Change (₹)','Multiplier','Recommendation'].map(h => (
-                      <th key={h} style={{ padding:'8px 10px',
-                        textAlign: ['Current','Optimised','Change (₹)','Multiplier'].includes(h)?'right':'left',
-                        fontWeight:700 }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {Object.entries(optimResult.category_results||{}).map(([cat, v], ri) => {
-                    const orig    = v.original  || v.current  || 0
-                    const opt     = v.optimized || v.optimised || 0
-                    const delta   = v.delta     || v.change   || (opt - orig)
-                    const mult    = v.multiplier != null ? v.multiplier : (orig ? opt / orig : 1)
-                    const dClr    = delta < 0 ? '#059669' : delta > 0 ? '#DC2626' : '#6B7280'
-                    const isR     = delta < -1000
-                    const isU     = delta > 1000
-                    return (
-                      <tr key={cat} style={{ background: ri%2===0?'white':'var(--ivory)' }}>
-                        <td style={{ padding:'8px 10px', fontWeight:700 }}>{cat}</td>
-                        <td style={{ textAlign:'right', padding:'8px 10px' }}>{formatRupees(orig)}</td>
-                        <td style={{ textAlign:'right', padding:'8px 10px', fontWeight:800, color:'var(--primary)' }}>{formatRupees(opt)}</td>
-                        <td style={{ textAlign:'right', padding:'8px 10px', fontWeight:700, color:dClr }}>
-                          {delta < 0 ? '↓' : delta > 0 ? '↑' : '='} {formatRupees(Math.abs(delta))}
-                        </td>
-                        <td style={{ textAlign:'right', padding:'8px 10px', color:'var(--muted)' }}>
-                          ×{typeof mult === 'number' ? mult.toFixed(2) : mult}
-                        </td>
-                        <td style={{ padding:'8px 10px', fontSize:11 }}>
-                          <span style={{ padding:'2px 8px', borderRadius:20,
-                            background: isR?'#FEE2E2':isU?'#DBEAFE':'#D1FAE5',
-                            color:      isR?'#DC2626':isU?'#1D4ED8':'#059669',
-                            fontWeight:700 }}>
-                            {isR?'↓ Reduce':isU?'↑ Upgrade':' Keep'}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Recommendations */}
-            <div style={{ marginTop:14 }}>
-              <div style={{ fontSize:13, fontWeight:800, color:'#9D174D', marginBottom:8 }}>
-                AI Recommendations:
-              </div>
-              {(optimResult.recommendations||[]).map((r, i) => {
-                const text = typeof r === 'string' ? r : (r.message || r.text || r.recommendation || JSON.stringify(r))
-                const isR = text.toLowerCase().includes('reduce')
-                const isU = text.toLowerCase().includes('upgrade')
-                return (
-                  <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10,
-                    padding:'10px 14px', borderRadius:10, marginBottom:6,
-                    background: isR?'#FEF2F2':isU?'#EFF6FF':'#F0FDF4',
-                    borderLeft: `3px solid ${isR?'#DC2626':isU?'#1D4ED8':'#059669'}` }}>
-                    <span style={{ color: isR?'#DC2626':isU?'#1D4ED8':'#059669',
-                      fontWeight:700, flexShrink:0 }}>
-                      {isR?'↓':isU?'↑':''}
-                    </span>
-                    <span style={{ fontSize:13, color: isR?'#DC2626':isU?'#1D4ED8':'#166534',
-                      lineHeight:1.5, fontWeight:600 }}>
-                      {text}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div style={{ marginTop:10, fontSize:11, color:'var(--muted)', display:'flex', gap:16 }}>
-              <span>PSO Convergence: <b>{Math.max(0, Math.min(100, optimResult.convergence || 0)).toFixed(0)}%</b></span>
-              <span>Particles: <b>{optimResult.particles}</b></span>
-              <span>Iterations: <b>{optimResult.iterations}</b></span>
-            </div>
-          </>)}
         </div>
 
-        {/* ── RL Explanation Card ── */}
-        <div className="section-card" style={{
-          borderLeft: '4px solid #4F46E5', background: '#FAFAFA'
-        }}>
+        <div className="section-card" style={{ borderLeft: '4px solid #4F46E5', background: '#FAFAFA' }}>
           <div style={{ display:'flex', alignItems:'flex-start', gap:14 }}>
-            <span style={{ fontSize:28, lineHeight:1 }}></span>
             <div>
               <div style={{ fontWeight:800, fontSize:15, color:'#1E1B4B', marginBottom:6 }}>
                 Self-Learning Budget AI
               </div>
               <div style={{ fontSize:13, color:'#374151', lineHeight:1.6, marginBottom:8 }}>
                 Every time you log what you actually spent, WeddingBudget.AI learns.
-                Over time, estimates become more accurate for your city and wedding style.
-              </div>
-              <div style={{ fontSize:12, color:'#6B7280' }}>
-                Current model: <b style={{ color:'#4F46E5' }}>
-                  {rlStats ? rlStats.total_training_samples : 0} total bookings logged
-                </b>
-                {rlStats?.overall_accuracy != null && (
-                  <span> · Overall accuracy: <b style={{ color:'#059669' }}>{rlStats?.overall_accuracy}%</b></span>
-                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── Export ── */}
+        {/* Export Section */}
         <div className="section-card">
           <div className="section-title">Export Budget</div>
-          <div style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
-            <button onClick={exportServerPDF} disabled={exporting} className="btn-primary">
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <button onClick={exportServerPDF} disabled={exporting}
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: 'none',
+                background: 'linear-gradient(135deg, #023047, #04699b)',
+                color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}>
               {exporting ? 'Generating...' : ' Download Detailed PDF (Server)'}
             </button>
             <button onClick={printPDF}
-              style={{ padding:'12px 24px', borderRadius:12, border:'none', cursor:'pointer',
-                background:'linear-gradient(135deg,#023047,#04699b)', color:'white',
-                fontWeight:700, fontSize:14 }}>
-               Print / Save as PDF (Full Detail)
+              style={{
+                padding: '12px 24px', borderRadius: 12, border: 'none', cursor: 'pointer',
+                background: '#E8F4FA', color: '#023047',
+                fontWeight: 700, fontSize: 14
+              }}>
+              Print / Save as PDF (Local)
             </button>
             <button onClick={() => {
-              const blob = new Blob([JSON.stringify({ ...budget, scenarios, optimResult, wedding_config:wedding }, null, 2)],
-                { type:'application/json' })
-              const a = document.createElement('a')
-              a.href = URL.createObjectURL(blob)
-              a.download = 'WeddingBudget_Full.json'
-              a.click()
-            }} style={{ padding:'12px 24px', borderRadius:12, border:'2px solid var(--primary)',
-              background:'transparent', color:'var(--primary-dark)', fontWeight:700, cursor:'pointer', fontSize:14 }}>
-              { } Export JSON
+              const msg = `🪷 *WeddingBudget.AI Estimate*\n💰 *Total: ${formatRupees((budget?.total?.mid || 0))}*\n_Generated by WeddingBudget.AI_`;
+              window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+            }} style={{
+              padding: '12px 24px', borderRadius: 12, border: 'none',
+              cursor: 'pointer', background: '#25D366', color: 'white',
+              fontWeight: 700, fontSize: 14
+            }}>
+              Share on WhatsApp
             </button>
-            <button onClick={() => {
-  const msg = `🪷 *WeddingBudget.AI Estimate*
-
-💰 *Total: ${formatRupees((budget?.total?.mid || 0))}*
-📊 Range: ${formatRupees((budget?.total?.low || 0))} – ${formatRupees((budget?.total?.high || 0))}
-🎯 Confidence: ${Math.round(((budget?.confidence_score || 0)||0.72)*100)}%
-
-*Breakdown:*
-${Object.entries((budget?.items || {})).map(([k,v])=>`• ${k}: ${formatRupees(v?.mid || 0)}`).join('\n')}
-
-_Generated by WeddingBudget.AI_
-https://wedddingbudget-ai.vercel.app`
-
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank')
-}} style={{
-  padding:'12px 24px', borderRadius:12, border:'none',
-  cursor:'pointer', background:'#25D366', color:'white',
-  fontWeight:700, fontSize:14, display:'flex',
-  alignItems:'center', gap:8
-}}>
-  <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
-    width={20} height={20} alt="WhatsApp"/>
-  Share on WhatsApp
-</button>
           </div>
-          <div style={{ marginTop:10, fontSize:12, color:'#4a7a94' }}>
-             "Print / Save as PDF" includes sub-items, scenario comparison, and PSO results — works offline.
+          <div style={{ marginTop: 10, fontSize: 12, color: '#4a7a94' }}>
+            "Print / Save as PDF" includes sub-items and PSO results — works offline.
           </div>
         </div>
+
+        {/* Scenario Comparison */}
+        {scenarios && Object.keys(scenarios).length > 0 && (
+          <div className="section-card">
+            <div className="section-title">Scenario Comparison</div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: '#023047', color: 'white' }}>
+                    <th style={{ padding: '10px', textAlign: 'left', fontWeight: 700 }}>Category</th>
+                    {Object.keys(scenarios).map(name => (
+                      <th key={name} style={{ padding: '10px', textAlign: 'right', fontWeight: 700 }}>
+                        {name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.keys(scenarios.Minimalist?.items || {}).map(cat => (
+                    <tr key={cat} style={{ background: cat.indexOf('Contingency') !== -1 ? '#f0f7fc' : 'white' }}>
+                      <td style={{ padding: '8px 10px', fontWeight: 600 }}>{cat}</td>
+                      {Object.keys(scenarios).map(name => (
+                        <td key={name} style={{ padding: '8px 10px', textAlign: 'right' }}>
+                          {formatRupees(scenarios[name]?.items?.[cat]?.mid || 0)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  <tr style={{ background: '#e8f4fa', fontWeight: 800 }}>
+                    <td style={{ padding: '12px 10px', fontSize: 15 }}>Total Budget</td>
+                    {Object.keys(scenarios).map(name => (
+                      <td key={name} style={{ padding: '12px 10px', textAlign: 'right', fontSize: 15, color: '#023047' }}>
+                        {formatRupees(scenarios[name]?.total?.mid || 0)}
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 16, fontSize: 12, color: '#64748b' }}>
+              Compare different wedding scales: Minimalist (60%), Modest (80%), Standard (100%), Luxury (140%)
+            </div>
+          </div>
+        )}
 
       </>)}
 

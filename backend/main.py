@@ -117,7 +117,29 @@ def health():
     except Exception:
         decor_info = {"decor_model_loaded": False, "decor_model_samples": 0}
 
-    return {"status": "ok", **rl_info, **decor_info}
+    # Check database connection
+    db_connected = False
+    try:
+        from database import SessionLocal
+        with SessionLocal() as db:
+            db.execute("SELECT 1")
+        db_connected = True
+    except Exception:
+        db_connected = False
+
+    # Count endpoints (rough estimate)
+    total_endpoints = len(app.routes)
+
+    return {
+        "status": "ok",
+        "version": "2.0.0",
+        "db": "connected" if db_connected else "disconnected",
+        **rl_info,
+        **decor_info,
+        "admin_panel": "active",
+        "scraping_pipeline": "active",
+        "total_endpoints": total_endpoints
+    }
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

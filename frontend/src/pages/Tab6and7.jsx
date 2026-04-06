@@ -42,7 +42,8 @@ export function Tab6Sundries() {
   const stationTotal = stationQty * stationPP
   const subTotal     = basketTotal + hamperTotal + ritualAmt + stationTotal + photoVideo + makeupHair
   const contingency  = Math.round(subTotal * 0.08)
-  const sundryTotal  = subTotal + contingency
+  const baseSundryTotal = subTotal + contingency
+  const sundryTotal = Math.round(baseSundryTotal * (wedding.cost_multipliers?.['Sundries & Basics'] || 1))
 
   const inp = (val, key, w=80) => (
     <input type="number" min={0} value={val}
@@ -152,8 +153,13 @@ export function Tab6Sundries() {
             <div style={{ color:'white', fontSize:14, fontWeight:600 }}>Total Sundries</div>
             <div style={{ color:'rgba(255,255,255,0.7)', fontSize:12 }}>Including 8% contingency</div>
           </div>
-          <div style={{ fontFamily:'EB Garamond,serif', fontSize:32, fontWeight:800, color:C.amber }}>
+          <div style={{ fontFamily:'EB Garamond,serif', fontSize:32, fontWeight:800, color:C.amber, textAlign: 'right' }}>
             {formatRupees(sundryTotal)}
+            {(wedding.cost_multipliers?.['Sundries & Basics'] || 1) !== 1 && (
+              <div style={{ fontSize: 10, fontWeight: 400, color: 'white', opacity: 0.8 }}>
+                (AI Optimised ×{wedding.cost_multipliers['Sundries & Basics'].toFixed(2)})
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -247,7 +253,8 @@ export function Tab7Logistics() {
   const SFX_COSTS = { 'Cold Pyro': 18000, 'Confetti Cannon': 10000, 'Smoke Machine': 8000, 'Laser Show': 30000, 'Flower Cannon': 12000 }
   const sfxCost = (wedding.sfx_items || []).reduce((s, item) => s + (SFX_COSTS[item] || 0), 0)
 
-  const logisticsTotal = transferCost + ghodiCost + dholiCost + sfxCost + brideTravel + groomTravel
+  const baseLogisticsTotal = transferCost + ghodiCost + dholiCost + sfxCost + brideTravel + groomTravel
+  const logisticsTotal = Math.round(baseLogisticsTotal * (wedding.cost_multipliers?.['Logistics & Transport'] || 1))
 
   useEffect(() => {
     if (wedding.logistics_total !== logisticsTotal) update('logistics_total', logisticsTotal)
@@ -540,6 +547,11 @@ export function Tab7Logistics() {
         <div style={{ fontFamily:'EB Garamond,serif', fontSize:42, fontWeight:800,
           color:C.primary, textAlign:'center', marginBottom:20 }}>
           {formatRupees(logisticsTotal)}
+          {(wedding.cost_multipliers?.['Logistics & Transport'] || 1) !== 1 && (
+            <div style={{ fontSize: 11, fontWeight: 400, color: C.blue, opacity: 0.6, marginTop: -4 }}>
+              (AI Optimised ×{wedding.cost_multipliers['Logistics & Transport'].toFixed(2)})
+            </div>
+          )}
         </div>
 
         <div style={{ background:C.light, borderRadius:12, padding:16 }}>

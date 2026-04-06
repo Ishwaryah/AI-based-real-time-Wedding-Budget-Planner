@@ -130,8 +130,12 @@ function LoginPage({ onLogin }) {
   const [error, setError]       = useState('')
   const [loading, setLoading]   = useState(false)
 
-  const attempt = async () => {
-    if (!username || !password) { setError('Enter username and password'); return }
+  const attempt = async (e) => {
+    if (e) e.preventDefault()
+    if (username.trim() === '' || password.trim() === '') {
+      setError('Both username and password are required.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -166,21 +170,21 @@ function LoginPage({ onLogin }) {
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Username</label>
-          <input value={username} onChange={e => setUsername(e.target.value)}
+          <input required value={username} onChange={e => { setUsername(e.target.value); setError('') }}
             onKeyDown={e => e.key === 'Enter' && attempt()}
             placeholder="admin" style={inputStyle} />
         </div>
 
         <div style={{ marginBottom: 14 }}>
           <label style={{ fontSize: 12, fontWeight: 600, color: '#555', display: 'block', marginBottom: 6 }}>Password</label>
-          <input type="password" value={password} onChange={e => { setPassword(e.target.value); setError('') }}
+          <input required type="password" value={password} onChange={e => { setPassword(e.target.value); setError('') }}
             onKeyDown={e => e.key === 'Enter' && attempt()}
             placeholder="Enter password" style={{ ...inputStyle, borderColor: error ? C.red : C.sky }} />
         </div>
 
-        {error && <div style={{ color: C.red, fontSize: 13, marginBottom: 12 }}> {error}</div>}
+        {error && <div style={{ color: C.red, fontSize: 13, marginBottom: 12, fontWeight: 600 }}>⚠ {error}</div>}
 
-        <button onClick={attempt} disabled={loading || !username || !password} style={{
+        <button onClick={attempt} disabled={loading} style={{
           width: '100%', padding: '12px', borderRadius: 10, border: 'none',
           background: loading ? '#888' : C.navy, color: 'white',
           fontWeight: 700, fontSize: 15, cursor: loading ? 'not-allowed' : 'pointer',
@@ -502,8 +506,9 @@ function DecorLabelsTab() {
                 {img.filename}
               </div>
               <img
-                src={`http://localhost:8080/decor_images/${img.filename}`}
+                src={`${API_BASE.replace('/api', '')}/decor_images/${img.filename}`}
                 alt={img.filename}
+                onError={(e) => { e.target.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found' }}
                 style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }}
               />
               <div style={{ padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>

@@ -213,8 +213,8 @@ export default function Tab5Artists() {
     setNamedArtistBookings(nb => nb.map(b => b.namedId === namedId ? {...b, negotiated: fee} : b))
   }
 
-  // Recalculate total considering negotiated costs
-  const total = selected.reduce((sum, a) => {
+  // Recalculate total considering negotiated costs and multipliers
+  const baseTotal = selected.reduce((sum, a) => {
     const det = wedding.artist_events?.[a.id]
     if (det?.negotiated_cost) return sum + det.negotiated_cost
     const [lo, hi] = ARTIST_COST_MAP[a.id] || [0, 0]
@@ -224,6 +224,7 @@ export default function Tab5Artists() {
     const na = NAMED_ARTISTS.find(a => a.id === b.namedId)
     return s + (na ? (na.fee_low + na.fee_high) / 2 : 0)
   }, 0)
+  const total = Math.round(baseTotal * (wedding.cost_multipliers?.['Artists & Entertainment'] || 1))
 
   return (
     <div>
@@ -370,6 +371,11 @@ export default function Tab5Artists() {
               </span>
               <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 28, fontWeight: 800, color: '#7a5900' }}>
                 {formatRupees(total)}
+                {(wedding.cost_multipliers?.['Artists & Entertainment'] || 1) !== 1 && (
+                  <span style={{ fontSize: 10, display: 'block', textAlign: 'right', fontWeight: 400, opacity: 0.8 }}>
+                    (AI Optimised ×{wedding.cost_multipliers['Artists & Entertainment'].toFixed(2)})
+                  </span>
+                )}
               </span>
             </div>
           </div>

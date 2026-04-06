@@ -283,7 +283,7 @@ export default function Tab4Food() {
       const item = SPECIALTY_COUNTERS.find(x => x.id === id)
       return s + (item?.rate_per_head || 0) * totalGuests
     }, 0)
-    return mealTotal + barTotal + specialtyTotal + staffCost + crockeryCost + linenCost
+    return Math.round((mealTotal + barTotal + specialtyTotal + staffCost + crockeryCost + linenCost) * (wedding.cost_multipliers?.['Food & Beverages'] || 1))
   }
 
   return (

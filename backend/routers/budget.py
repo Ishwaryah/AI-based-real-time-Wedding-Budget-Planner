@@ -159,21 +159,16 @@ def log_actual_cost(payload: LogActualPayload, db: Session = Depends(get_db)):
 def get_tracker_summary(db: Session = Depends(get_db)):
     """Return latest logged actual per budget category."""
     from models import BudgetTracker
-    from sqlalchemy import and_
+    from sqlalchemy import text
 
-    # Get the latest record for each category using ORM (works with SQLite & PostgreSQL)
-    subquery = db.query(
-        BudgetTracker.category,
-        func.max(BudgetTracker.id).label("max_id")
-    ).group_by(BudgetTracker.category).subquery()
-
-    rows = db.query(BudgetTracker).join(
-        subquery,
-        and_(
-            BudgetTracker.category == subquery.c.category,
-            BudgetTracker.id == subquery.c.max_id
-        )
-    ).all()
+    # Use DISTINCT ON for PostgreSQL to get latest per category
+    query = text("""
+        SELECT DISTINCT ON (category) category, estimated, actual, difference
+        FROM budget_tracker
+        ORDER BY category, created_at DESC
+    """)
+    result = db.execute(query)
+    rows = result.fetchall()
 
     summary = []
     total_estimated = 0.0
@@ -181,11 +176,11 @@ def get_tracker_summary(db: Session = Depends(get_db)):
     total_difference = 0.0
 
     for row in rows:
-        estimated = float(row.estimated or 0.0)
-        actual = float(row.actual or 0.0)
-        difference = float(row.difference or 0.0)
+        estimated = float(row[1] or 0.0)
+        actual = float(row[2] or 0.0)
+        difference = float(row[3] or 0.0)
         summary.append({
-            "category": row.category,
+            "category": row[0],
             "estimated": estimated,
             "actual": actual,
             "difference": difference,

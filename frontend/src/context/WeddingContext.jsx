@@ -361,6 +361,15 @@ export const initialWeddingState = {
   groom_travel_distance_km: 0,
   // Budget
   budget_result: null,
+  cost_multipliers: {
+    'Venue': 1,
+    'Food & Beverages': 1,
+    'Accommodation': 1,
+    'Decor & Design': 1,
+    'Artists & Entertainment': 1,
+    'Logistics & Transport': 1,
+    'Sundries & Basics': 1,
+  },
 }
 
 export function WeddingProvider({ children }) {

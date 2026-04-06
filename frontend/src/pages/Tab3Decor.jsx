@@ -479,7 +479,12 @@ export default function Tab3Decor() {
             padding:'18px 24px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
             <div style={{ color:'white', fontSize:15, fontWeight:600 }}>Total Decor Budget</div>
             <div style={{ fontFamily:'EB Garamond,serif', fontSize:30, fontWeight:800, color:'#FDE68A' }}>
-              {formatRupees(totalDecor)}
+              {formatRupees(totalDecor * (wedding.cost_multipliers?.['Decor & Design'] || 1))}
+              {(wedding.cost_multipliers?.['Decor & Design'] || 1) !== 1 && (
+                <div style={{ fontSize: 10, textAlign: 'right', fontWeight: 400, color: 'white', opacity: 0.8 }}>
+                   (AI Optimised ×{wedding.cost_multipliers['Decor & Design'].toFixed(2)})
+                </div>
+              )}
             </div>
           </div>
         </div>

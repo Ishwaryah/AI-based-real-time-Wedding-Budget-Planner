@@ -214,7 +214,7 @@ function validateTab(tabIndex, wedding) {
   return errors
 }
 
-function TopNav({ activeTab, allTabs, isAdminRole, goTo, onAdminClick }) {
+function TopNav({ activeTab, allTabs, isAdminRole, goTo }) {
   const { wedding } = useWedding()
   const [scrolled, setScrolled] = useState(false)
 
@@ -317,19 +317,6 @@ function TopNav({ activeTab, allTabs, isAdminRole, goTo, onAdminClick }) {
             {wedding.total_guests} guests
           </span>
         )}
-        <button
-          onClick={onAdminClick}
-          title="Admin Panel"
-          style={{
-            background: 'none', border: '1px solid #EBEBEB',
-            borderRadius: 7, padding: '4px 10px',
-            fontSize: 13, cursor: 'pointer', color: '#888',
-            fontFamily: "'DM Sans', 'Inter', sans-serif",
-            lineHeight: 1
-          }}
-        >
-          
-        </button>
       </div>
     </nav>
   )
@@ -362,9 +349,14 @@ function AppInner() {
 
   // Listen for sticky "Next" buttons inside tab components
   useEffect(() => {
-    const listener = () => handleNext()
-    window.addEventListener('weddingNextTab', listener)
-    return () => window.removeEventListener('weddingNextTab', listener)
+    const nextListener = () => handleNext()
+    const goToListener = (e) => goTo(e.detail)
+    window.addEventListener('weddingNextTab', nextListener)
+    window.addEventListener('weddingGoToTab', goToListener)
+    return () => {
+      window.removeEventListener('weddingNextTab', nextListener)
+      window.removeEventListener('weddingGoToTab', goToListener)
+    }
   }, [activeTab, wedding])
 
   const handleNext = () => {
@@ -387,6 +379,7 @@ function AppInner() {
           <LandingPage onEnter={(role) => {
             setIsAdminRole(role === 'admin')
             setShowWelcome(false)
+            if (role === 'admin') setShowAdmin(true)
           }} />
         </div>
       )}
@@ -395,7 +388,6 @@ function AppInner() {
         allTabs={allTabs}
         isAdminRole={isAdminRole}
         goTo={goTo}
-        onAdminClick={() => setShowAdmin(true)}
       />
       <div style={{ width: '100%', height: 3, background: '#EBEBEB' }}>
         <div style={{ height: '100%', background: '#D4537E',

@@ -1,126 +1,106 @@
-# weddingbudget.AI — AI-Powered Wedding Budget Planner
+# WeddingBudget.AI
+AI-powered Indian wedding budget estimator
 
-> Full-stack hackathon project: AI decor cost prediction + PSO budget optimizer for Indian weddings.
+## Live URLs
+- Frontend: https://wedddingbudget-ai.vercel.app
+- Backend: https://wedddingbudget-ai.onrender.com
+- API Docs: https://wedddingbudget-ai.onrender.com/docs
+- Admin: https://wedddingbudget-ai.vercel.app/admin
 
----
+## Tech Stack
+| Layer | Technology |
+|---|---|
+| Frontend | React 18 + Vite + Framer Motion |
+| Backend | FastAPI + Python 3.11 |
+| Database | PostgreSQL + SQLAlchemy |
+| ML | GradientBoosting + MobileNetV2 + PSO + RL |
+| Deployment | Vercel + Render |
 
-## Features
+## Modules Built
+| Module | Status |
+|---|---|
+| Smart Input Wizard (8 tabs) | ✅ |
+| Decor Intelligence Library | ✅ |
+| Logistics Cost Engine | ✅ |
+| Artist Cost Mapper | ✅ |
+| F&B Budget Module | ✅ |
+| Sundries & Basics | ✅ |
+| Budget Output + Export | ✅ |
+| Admin Panel + Labelling UI | ✅ |
+| Scraping Pipeline (10000+ scapper images) | ✅ |
+| RL Self-Learning Agent | ✅ |
+| Budget Rules Editor | ✅ |
+| Model Status Dashboard | ✅ |
+| Budget Tracker (Admin) | ✅ |
+| WhatsApp Sharing | ✅ |
 
-| Tab | What it does |
-|-----|-------------|
-| Style | Wedding type, date (weekend +15% uplift), event selector |
-| Venue | Venue type, city, guest count, rooms auto-calculator |
-| Decor AI | ML cost predictor (MobileNetV2 + GradientBoosting) + similarity search |
-| Food | Meal tiers, bar type, specialty counters, live per-head estimate |
-| Artists | Named artist selector with negotiated fee ranges |
-| Sundries | Room baskets, hampers, rituals — auto-calculated |
-| Logistics | Fleet calculator, Ghodi, Dholi, SFX, distance-based transfers |
-| Budget | PSO Optimizer, pie chart, itemised table, PDF/JSON export |
-| Admin | Pricing control, booking requests, negotiation log |
+## Architecture
+User Browser
+↓
+React Frontend (Vercel)
+↓ REST API
+FastAPI Backend (Render)
+↓
+PostgreSQL Database
+↓
+ML Pipeline:
+├── Decor AI (MobileNetV2 + GradientBoosting)
+├── PSO Optimizer (30 particles × 50 iterations)
+└── RL Agent (Multi-Armed Bandit ε=0.15)
 
----
+## All API Endpoints
+POST /api/budget/calculate
+POST /api/budget/scenarios
+POST /api/budget/optimize
+POST /api/budget/log-actual
+POST /api/budget/optimize
+POST /api/budget/finalise
+GET  /api/budget/rl-stats
+GET  /api/budget/tracker-summary
+GET  /api/decor/library
+POST /api/decor/predict
+POST /api/decor/predict-upload
+POST /api/admin/login
+GET/POST/PUT/DELETE /api/admin/artists
+GET/PUT /api/admin/fb-rates
+GET/POST/PUT/DELETE /api/admin/logistics/{city}
+GET/PUT /api/admin/contingency
+GET/PUT /api/admin/budget-rules
+GET /api/admin/model-status
+GET /api/admin/decor-images
+POST /api/admin/decor/retrain
+GET /api/health
 
-## Quick Start
-
-### Windows
-```
-Double-click: START_WINDOWS.bat
-```
-
-### Mac / Linux
+## Local Setup
 ```bash
-chmod +x start_mac_linux.sh && ./start_mac_linux.sh
-```
-
-The script checks Node.js + Python, installs packages, trains the AI model, then opens the app.
-
----
-
-## Prerequisites
-
-- **Node.js** v18+ — https://nodejs.org (LTS)
-- **Python** 3.10+ — https://python.org
-  - Windows: tick **"Add Python to PATH"** during install
-
----
-
-## Project Structure
-
-```
-weddingbudget.ai/
-├── frontend/                  # React 18 + Vite
-│   └── src/
-│       ├── App.jsx            # Root + tab navigation
-│       ├── context/           # Global wedding state (WeddingContext)
-│       ├── pages/             # Tab1Style … Tab8Budget, AdminPage
-│       └── components/        # ImageCard
-│
-├── backend/                   # FastAPI (Python)
-│   ├── main.py                # App entry + CORS
-│   ├── models/cost_tables.py  # All cost data (admin-editable)
-│   ├── services/budget_engine.py  # Budget calc + PSO optimizer
-│   ├── routers/               # /budget, /decor, /admin endpoints
-│   └── ml/train.py            # ML pipeline (MobileNetV2 + RF)
-│
-├── START_WINDOWS.bat          # One-click Windows launcher
-├── start_mac_linux.sh         # One-click Mac/Linux launcher
-└── render.yaml                # Render.com deploy config
-```
-
----
-
-## AI Components
-
-### Decor Cost Predictor (Tab 3)
-- Model: GradientBoostingRegressor
-- Features: MobileNetV2 image embeddings (1280-dim) + one-hot style tags
-- Output: Predicted cost ± 20% range + top-3 similar designs (cosine similarity)
-
-### PSO Budget Optimizer (Tab 8)
-- Algorithm: Particle Swarm Optimization — 30 particles × 50 iterations
-- Levers: Venue tier, Food tier, Hotel tier, Decor, Artists, Logistics
-- Output: Itemised recommendations to hit the user's target budget
-
----
-
-## Manual Start (if scripts fail)
-
-**Terminal 1 — Backend**
-```bash
-py -3.11 -m venv .venv
+# Backend
 cd backend
-py -3.11 -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-python ml/train.py
-pip install greenlet --force-reinstall
-python -m uvicorn main:app --reload --port 8000
-```
+python -m uvicorn main:app --port 8000
 
-cd backend
-.venv\Scripts\Activate.ps1
-python -m uvicorn main:app --reload --port 8000
-
-**Terminal 2 — Frontend**
-```bash
+# Frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-Open: http://localhost:3000
+## Environment Variables
+DATABASE_URL=postgresql+asyncpg://...
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD_HASH=...
+VITE_API_URL=https://wedddingbudget-ai.onrender.com/api
+PYTHON_VERSION=3.11.0
 
----
+## Admin Credentials
+URL: /admin
+Username: admin
+Password: shaadi@admin2026
 
-## Deploy (Free)
-
-| Service | Purpose | Cost |
-|---------|---------|------|
-| Render | FastAPI backend | Free (sleeps after 15 min idle) |
-| Vercel | React frontend | Free |
-
-See [DEPLOY_ONLINE.md](DEPLOY_ONLINE.md) for step-by-step instructions.
-
----
-
-Built for Hackathon 2026.
+## Innovation Highlights
+- RL Agent learns from real vendor invoices
+- MobileNetV2 image embeddings for decor cost prediction
+- PSO optimizer finds optimal budget allocation
+- Auto-labelling pipeline for 299 decor images
+- Admin-controlled budget rules and multipliers
+- WhatsApp budget sharing for client presentations

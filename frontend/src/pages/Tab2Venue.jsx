@@ -172,7 +172,12 @@ export default function Tab2Venue() {
                   </div>
                 </div>
                 <span style={{ fontFamily: 'EB Garamond, serif', fontSize: 22, fontWeight: 800, color: '#7a5900' }}>
-                  {formatRupees((wedding.mandapam_cost_per_day || 0) * (wedding.num_days || 1))}
+                  {formatRupees((wedding.mandapam_cost_per_day || 0) * (wedding.num_days || 1) * (wedding.cost_multipliers?.['Venue'] || 1))}
+                  {(wedding.cost_multipliers?.['Venue'] || 1) !== 1 && (
+                    <span style={{ fontSize: 10, display: 'block', textAlign: 'right', fontWeight: 400, opacity: 0.8 }}>
+                      (AI Optimised ×{wedding.cost_multipliers['Venue'].toFixed(2)})
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
