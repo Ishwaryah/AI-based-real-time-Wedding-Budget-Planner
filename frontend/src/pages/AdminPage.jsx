@@ -609,7 +609,8 @@ function BudgetTrackerTab() {
           actual: act,
         }),
       })) || {}
-      setMessage(`${trimmed} updated. Accuracy improvement: ${result.accuracy_improvement >= 0 ? '+' : ''}${result.accuracy_improvement?.toFixed(1)}%`)
+      const improvement = Number(result.accuracy_improvement || 0)
+      setMessage(`${trimmed} updated. Accuracy improvement: ${improvement >= 0 ? '+' : ''}${improvement.toFixed(1)}%`)
       setNewEntry({ category: '', estimated: '', actual: '' })
       await loadSummary()
     } catch (e) {
