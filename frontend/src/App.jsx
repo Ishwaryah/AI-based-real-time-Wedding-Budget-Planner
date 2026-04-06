@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import ErrorBoundary from './components/ErrorBoundary'
+import ParticleField from './components/ParticleField'
 import { motion, AnimatePresence } from 'framer-motion'
 import { WeddingProvider, useWedding } from './context/WeddingContext'
 import LandingPage from './pages/LandingPage'
@@ -374,6 +375,7 @@ function AppInner() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <ParticleField />
       {showWelcome && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, overflowY: 'auto' }}>
           <LandingPage onEnter={(role) => {
