@@ -150,16 +150,16 @@ function BudgetBarChart({ budget, wedding, tracker }) {
     
     // Data setup
     const data = [
-      { label: 'Budget',    value: wedding.total_budget, color: '#023047' },
-      { label: 'Estimated', value: budget.total.mid,     color: '#C9A84C' },
-      { label: 'Low',       value: budget.total.low,     color: '#059669' },
-      { label: 'High',      value: budget.total.high,    color: '#DC2626' },
-      { label: 'Actual',    value: actualTotal,          color: '#1D4ED8' },
-    ].filter(d => d.value > 0)
+      { label: 'Budget',    value: wedding?.total_budget || 0, color: '#023047' },
+      { label: 'Estimated', value: budget.total.mid || 0,     color: '#C9A84C' },
+      { label: 'Low',       value: budget.total.low || 0,     color: '#059669' },
+      { label: 'High',      value: budget.total.high || 0,    color: '#DC2626' },
+      { label: 'Actual',    value: actualTotal,               color: '#1D4ED8' },
+    ].filter(d => d.label !== 'Budget' || (wedding?.total_budget || 0) > 0)
 
     if (!data.length) return
 
-    const maxVal = Math.max(...data.map(d => d.value)) * 1.1 || 1000000
+    const maxVal = Math.max(...data.map(d => d.value), 1) * 1.1
     const w = 400, h = 220
     const padL = 50, padR = 20, padT = 30, padB = 40
     const chartW = w - padL - padR
@@ -167,7 +167,7 @@ function BudgetBarChart({ budget, wedding, tracker }) {
 
     ctx.clearRect(0, 0, w, h)
 
-    // Y Axis labels
+    // Y Axis labels and grid lines
     ctx.strokeStyle = '#F3F4F6'
     ctx.lineWidth = 1
     ctx.beginPath()
@@ -186,7 +186,7 @@ function BudgetBarChart({ budget, wedding, tracker }) {
 
     // Bars
     const barW = Math.min(36, (chartW / data.length) * 0.7)
-    const spacing = (chartW / data.length)
+    const spacing = chartW / data.length
     const bars = []
 
     data.forEach((d, i) => {
@@ -195,7 +195,6 @@ function BudgetBarChart({ budget, wedding, tracker }) {
       const by = padT + chartH - bh
 
       ctx.fillStyle = d.color
-      // Draw bar
       ctx.beginPath()
       if (ctx.roundRect) {
         ctx.roundRect(bx, by, barW, bh, [4, 4, 0, 0])
@@ -204,7 +203,6 @@ function BudgetBarChart({ budget, wedding, tracker }) {
       }
       ctx.fill()
 
-      // X Labels
       ctx.fillStyle = '#6B7280'
       ctx.font = 'bold 9px sans-serif'
       ctx.textAlign = 'center'
@@ -213,13 +211,12 @@ function BudgetBarChart({ budget, wedding, tracker }) {
       bars.push({ x: bx, y: by, w: barW, h: bh, item: d })
     })
     barsRef.current = bars
-  }, [budget, wedding.total_budget, tracker])
+  }, [budget, wedding?.total_budget, tracker])
 
   const handleMouseMove = (e) => {
     const canvas = canvasRef.current
     if (!canvas) return
     const rect = canvas.getBoundingClientRect()
-    // Scale coordinate mapping
     const scaleX = canvas.width / rect.width
     const scaleY = canvas.height / rect.height
     const mx = (e.clientX - rect.left) * scaleX
@@ -241,9 +238,9 @@ function BudgetBarChart({ budget, wedding, tracker }) {
   }
 
   return (
-    <div style={{ position:'relative', borderTop:'1px solid #F3F4F6', pt:20, width:'100%' }}>
+    <div style={{ position:'relative', width:'100%' }}>
       <div style={{ fontSize:13, fontWeight:800, color:'#111', marginBottom:12, marginTop:20, textAlign:'center' }}>
-        Budget vs Estimate Comparison
+        Budget vs Estimate
       </div>
       <canvas ref={canvasRef} width={400} height={220} 
         style={{ width:'100%', height:'auto', maxWidth:400, display:'block', margin:'0 auto', cursor:'help' }}
