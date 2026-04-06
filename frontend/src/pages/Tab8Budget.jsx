@@ -1111,7 +1111,7 @@ export default function Tab8Budget() {
               <span>Particles: <b>{optimResult.particles}</b></span>
               <span>Iterations: <b>{optimResult.iterations}</b></span>
             </div>
-          </React.Fragment>)}
+          </>)}
         </div>
 
         {/* ── RL Explanation Card ── */}
@@ -1133,7 +1133,7 @@ export default function Tab8Budget() {
                   {rlStats ? rlStats.total_training_samples : 0} total bookings logged
                 </b>
                 {rlStats?.overall_accuracy != null && (
-                  <> · Overall accuracy: <b style={{ color:'#059669' }}>{rlStats.overall_accuracy}%</b></>
+                  <span> · Overall accuracy: <b style={{ color:'#059669' }}>{rlStats?.overall_accuracy}%</b></span>
                 )}
               </div>
             </div>
@@ -1194,7 +1194,7 @@ https://wedddingbudget-ai.vercel.app`
           </div>
         </div>
 
-      </React.Fragment>)}
+      </>)}
 
       <AnimatePresence>
         {submitted && (
