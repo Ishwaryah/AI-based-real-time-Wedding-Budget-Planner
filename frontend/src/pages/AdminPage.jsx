@@ -48,6 +48,25 @@ async function apiFetch(path, opts = {}) {
   return res.json()
 }
 
+async function apiFetchBudget(path, opts = {}) {
+  const res = await fetch(`${API}${path}`, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(opts.headers || {}),
+    },
+  })
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: 'Request failed' }))
+    throw new Error(err.detail || `HTTP ${res.status}`)
+  }
+  return res.json()
+}
+
+function formatRupees(value) {
+  return `₹${Number(value || 0).toLocaleString('en-IN')}`
+}
+
 // ── Shared UI ──────────────────────────────────────────────────────────────────
 function Toast({ msg, ok = true }) {
   if (!msg) return null
@@ -526,6 +545,205 @@ function DecorLabelsTab() {
 }
 
 // ── Tab: Budget Rules ──────────────────────────────────────────────────────────
+function BudgetTrackerTab() {
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const [actualInputs, setActualInputs] = useState({})
+  const [newEntry, setNewEntry] = useState({ category: '', estimated: '', actual: '' })
+  const [status, setStatus] = useState(null)
+  const [saveState, setSaveState] = useState({})
+  const [message, setMessage] = useState(null)
+
+  const BUDGET_CATEGORIES = [
+    'Wedding Type Base',
+    'Events & Ceremonies', 
+    'Venue',
+    'Accommodation',
+    'Food & Beverages',
+    'Decor & Design',
+    'Artists & Entertainment',
+    'Logistics & Transport',
+    'Sundries & Basics',
+    'Contingency Buffer (8%)'
+  ]
+
+  const loadSummary = useCallback(async () => {
+    setLoading(true)
+    setStatus(null)
+    setMessage(null)
+    try {
+      const data = await apiFetchBudget('/budget/tracker-summary')
+      setSummary(data)
+      const inputs = {}
+      (data.summary || []).forEach(row => {
+        inputs[row.category] = row.actual != null ? String(row.actual) : ''
+      })
+      setActualInputs(inputs)
+    } catch (e) {
+      setStatus({ error: e.message })
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { loadSummary() }, [loadSummary])
+
+  const submitActual = async (category, estimated, actual) => {
+    const trimmed = String(category || '').trim()
+    if (!trimmed) { setStatus({ error: 'Enter a category name' }); return }
+    const est = Number(estimated)
+    const act = Number(actual)
+    if (!est || est <= 0) { setStatus({ error: 'Enter a valid AI estimate' }); return }
+    if (!act || act <= 0) { setStatus({ error: 'Enter a valid actual cost' }); return }
+
+    setStatus(null)
+    setMessage(null)
+    setSaveState(prev => ({ ...prev, [trimmed]: 'saving' }))
+    try {
+      const result = await apiFetchBudget('/budget/log-actual', {
+        method: 'POST',
+        body: JSON.stringify({
+          session_id: 'admin-panel',
+          category: trimmed,
+          estimated: est,
+          actual: act,
+        }),
+      })
+      setMessage(`${trimmed} updated. Accuracy improvement: ${result.accuracy_improvement >= 0 ? '+' : ''}${result.accuracy_improvement?.toFixed(1)}%`)
+      setNewEntry({ category: '', estimated: '', actual: '' })
+      await loadSummary()
+    } catch (e) {
+      setStatus({ error: e.message })
+    } finally {
+      setSaveState(prev => ({ ...prev, [trimmed]: null }))
+    }
+  }
+
+  const totalEstimated = (summary?.summary || []).reduce((sum, row) => sum + (row.estimated || 0), 0)
+  const totalActual = (summary?.summary || []).reduce((sum, row) => sum + (row.actual || 0), 0)
+  const totalDifference = totalActual - totalEstimated
+
+  return (
+    <Card>
+      {status?.error && (
+        <div style={{ marginBottom: 16, color: C.red, fontWeight: 700 }}>{status.error}</div>
+      )}
+      {message && (
+        <div style={{ marginBottom: 16, color: C.green, fontWeight: 700 }}>{message}</div>
+      )}
+      <SectionTitle>Budget Tracker</SectionTitle>
+      <div style={{ fontSize: 13, color: '#555', marginBottom: 20 }}>
+        Track actual vendor invoice amounts and compare them against the AI estimate.
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: '#f0f7fc', color: C.navy, textAlign: 'left' }}>
+              {['Category', 'AI Estimate', 'Actual Cost', 'Difference', 'Action'].map(h => (
+                <th key={h} style={{ padding: '10px 10px', fontWeight: 700, borderBottom: `2px solid ${C.amber}` }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {(summary?.summary || []).length > 0 ? (summary.summary || []).map((row, index) => (
+              <tr key={row.category} style={{ background: index % 2 === 0 ? 'white' : '#f8fbff' }}>
+                <td style={{ padding: '10px 10px', fontWeight: 700 }}>{row.category}</td>
+                <td style={{ padding: '10px 10px', color: '#0f766e', fontWeight: 700 }}>{formatRupees(row.estimated)}</td>
+                <td style={{ padding: '10px 10px' }}>
+                  <input
+                    type="number"
+                    min="0"
+                    value={actualInputs[row.category] ?? ''}
+                    onChange={e => setActualInputs(prev => ({ ...prev, [row.category]: e.target.value }))}
+                    style={{ ...inputStyle, width: 120 }}
+                  />
+                </td>
+                <td style={{ padding: '10px 10px', color: row.difference > 0 ? C.red : C.green, fontWeight: 700 }}>
+                  {formatRupees(row.difference)}
+                </td>
+                <td style={{ padding: '10px 10px' }}>
+                  <Btn
+                    small
+                    disabled={saveState[row.category] === 'saving'}
+                    onClick={() => submitActual(row.category, row.estimated, actualInputs[row.category] || row.actual)}
+                    color={C.blue}
+                  >
+                    {saveState[row.category] === 'saving' ? 'Saving…' : 'Save'}
+                  </Btn>
+                </td>
+              </tr>
+            )) : (
+              <tr>
+                <td colSpan={5} style={{ padding: '18px 10px', color: '#666' }}>
+                  No logged budget actuals yet. Use the form below to add vendor invoices.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, marginTop: 24 }}>
+        <div style={{ background: '#f9fafb', padding: 16, borderRadius: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Estimated total</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.navy }}>{formatRupees(totalEstimated)}</div>
+        </div>
+        <div style={{ background: '#f9fafb', padding: 16, borderRadius: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Actual total</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.navy }}>{formatRupees(totalActual)}</div>
+        </div>
+        <div style={{ background: '#f9fafb', padding: 16, borderRadius: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Savings / Overspend</div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: totalDifference >= 0 ? C.green : C.red }}>
+            {formatRupees(totalDifference)}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 26 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>Add or update vendor invoice</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Category</label>
+            <select
+              value={newEntry.category}
+              onChange={e => setNewEntry(prev => ({ ...prev, category: e.target.value }))}
+              style={inputStyle}
+            >
+              {BUDGET_CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>AI Estimate (₹)</label>
+            <input
+              type="number"
+              value={newEntry.estimated}
+              onChange={e => setNewEntry(prev => ({ ...prev, estimated: e.target.value }))}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: '#444', display: 'block', marginBottom: 6 }}>Actual Cost (₹)</label>
+            <input
+              type="number"
+              value={newEntry.actual}
+              onChange={e => setNewEntry(prev => ({ ...prev, actual: e.target.value }))}
+              style={inputStyle}
+            />
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}>
+          <Btn onClick={() => submitActual(newEntry.category, newEntry.estimated, newEntry.actual)} color={C.green}>
+            Submit Actual
+          </Btn>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 function BudgetRulesTab() {
   const [rules, setRules] = useState(null)
   const [toast, showToast] = useToast()
@@ -720,6 +938,7 @@ const TABS = [
   { id: 'logistics',label: ' Logistics' },
   { id: 'decor',    label: ' Decor Labels' },
   { id: 'rules',    label: ' Budget Rules' },
+  { id: 'tracker',  label: ' Budget Tracker' },
   { id: 'settings', label: ' Settings' },
 ]
 
@@ -780,6 +999,7 @@ export default function AdminPage({ onClose }) {
         {activeTab === 'logistics' && <LogisticsTab />}
         {activeTab === 'decor'     && <DecorLabelsTab />}
         {activeTab === 'rules'     && <BudgetRulesTab />}
+        {activeTab === 'tracker'   && <BudgetTrackerTab />}
         {activeTab === 'settings'  && <SettingsTab onLogout={logout} />}
       </div>
     </div>
