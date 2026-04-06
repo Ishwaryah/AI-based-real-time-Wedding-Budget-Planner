@@ -257,24 +257,23 @@ export default function Tab8Budget() {
   const calculateBudget = async () => {
     setLoading(true); setScenLoading(true)
     try {
+      const payload = { data: wedding || {} }
+      console.log('Payload:', payload)
       const budRes = await fetch(`${API}/budget/calculate`, {
         method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ data: wedding })
+        body: JSON.stringify({ data: wedding || {} })
       })
       if (!budRes.ok) {
         throw new Error(`API returned status ${budRes.status}`)
       }
       const budData = await budRes.json()
-      // Check expected fields
-      if (!budData || !budData.total || typeof budData.total.mid === 'undefined') {
-        throw new Error('API response missing expected fields (total.mid)')
-      }
+      if (!budData || !budData.total) throw new Error('Invalid response')
       setBudget(budData)
       // Fetch scenarios in parallel
       try {
         const scenRes = await fetch(`${API}/budget/scenarios`, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ data: wedding })
+          body: JSON.stringify({ data: wedding || {} })
         })
         setScenarios(await scenRes.json())
       } catch (err) {
