@@ -315,12 +315,7 @@ export default function Tab8Budget() {
   const [finalised,   setFinalised]   = useState(false)
   const [finalising,  setFinalising]  = useState(false)
 
-  // ── RL state ──────────────────────────────────────────────────────────────
   const [rlStats,       setRlStats]       = useState(null)
-  const [logActualOpen, setLogActualOpen] = useState({})   // {category: bool}
-  const [logActualVal,  setLogActualVal]  = useState({})   // {category: string}
-  const [loggedCats,    setLoggedCats]    = useState(new Set())
-  const [loggingCat,    setLoggingCat]    = useState(null)
   const [budget_tracker, setBudgetTracker] = useState([]) // [{ category, actual }]
   const [toast,         setToast]         = useState(null) // {msg, type}
 
@@ -333,40 +328,12 @@ export default function Tab8Budget() {
     try {
       const res = await fetch(`${API}/budget/rl-stats`)
       if (res.ok) setRlStats(await res.json())
-    } catch { /* non-fatal */ }
+    } catch {
+      /* non-fatal */
+    }
   }
 
   useEffect(() => { fetchRlStats() }, [])
-
-  const handleLogActual = async (category, estimated) => {
-    const actualStr = logActualVal[category]
-    const actual    = parseFloat(actualStr)
-    if (!actual || actual <= 0) { showToast('Please enter a valid amount', 'error'); return }
-    setLoggingCat(category)
-    try {
-      const res = await fetch(`${API}/budget/log-actual`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: wedding.session_id || 'anonymous',
-          category,
-          estimated: estimated || 0,
-          actual,
-        })
-      })
-      const data = await res.json()
-      if (!res.ok) { showToast(data.detail || 'Error logging actual cost', 'error'); return }
-      showToast(data.message || 'AI model updated!', 'success')
-      setLoggedCats(prev => new Set([...prev, category]))
-      setBudgetTracker(prev => [...prev, { category, actual }])
-      setLogActualOpen(prev => ({ ...prev, [category]: false }))
-      await fetchRlStats()
-    } catch {
-      showToast('Could not reach backend — try again', 'error')
-    } finally {
-      setLoggingCat(null)
-    }
-  }
 
   // Count-up for the "Most Likely" total
   const midTotal = budget?.total?.mid || 0
@@ -727,57 +694,6 @@ export default function Tab8Budget() {
           <ConfidenceBar score={(budget?.confidence_score || 0)||0.72} />
         </div>
 
-        {/* ── RL Stats Card ── */}
-        <div className="section-card" style={{
-          background: 'linear-gradient(135deg,#EEF2FF,#F0FDF4)',
-          border: '1.5px solid #818CF8'
-        }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-            <span style={{ fontSize:22 }}></span>
-            <span style={{ fontWeight:800, fontSize:15, color:'#3730A3' }}>Learning Budget AI</span>
-            {(budget?.rl_active || false) && (
-              <span style={{ fontSize:11, background:'#4F46E5', color:'#fff',
-                padding:'2px 8px', borderRadius:20, fontWeight:700 }}>ACTIVE</span>
-            )}
-          </div>
-          {rlStats && rlStats.total_training_samples > 0 ? (
-            <div>
-              <div style={{ fontSize:13, color:'#374151', marginBottom:10 }}>
-                Trained on <b style={{ color:'#4F46E5' }}>{rlStats.total_training_samples} real bookings</b>
-                {rlStats.overall_accuracy != null && (
-                  <> · Avg accuracy: <b style={{ color:'#059669' }}>{rlStats.overall_accuracy}%</ b></>
-                )}
-              </div>
-              {rlStats.per_category && (
-                <div style={{ display:'flex', flexDirection:'column', gap:4 }}>
-                  {Object.entries(rlStats.per_category)
-                    .filter(([,v]) => v.training_count > 0)
-                    .map(([cat, v]) => (
-                      <div key={cat} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                        <div style={{ width:120, fontSize:11, color:'#374151', flexShrink:0,
-                          overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{cat}</div>
-                        <div style={{ flex:1, height:6, background:'#E5E7EB', borderRadius:3, overflow:'hidden' }}>
-                          <div style={{ height:'100%', width:`${v.avg_accuracy ?? 0}%`,
-                            background: v.trend === 'improving' ? '#059669' : v.trend === 'degrading' ? '#DC2626' : '#4F46E5',
-                            borderRadius:3, transition:'width 0.5s ease' }} />
-                        </div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'#374151', width:36, textAlign:'right' }}>
-                          {v.avg_accuracy != null ? `${v.avg_accuracy}%` : '—'}
-                        </div>
-                        <div style={{ fontSize:10, color:'#9CA3AF', width:20 }}>
-                          {v.trend === 'improving' ? '↑' : v.trend === 'degrading' ? '↓' : '→'}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ fontSize:13, color:'#6B7280' }}>
-              Log actual costs below to train the AI. Each booking improves future predictions.
-            </div>
-          )}
-        </div>
 
         {/* ── Total Summary Cards ── */}
         {/* Main "Most Likely" total — large count-up display */}
@@ -874,8 +790,6 @@ export default function Tab8Budget() {
                   const pct       = (budget?.total?.mid || 0) > 0 ? (vals.mid/(budget?.total?.mid || 0)*100).toFixed(1) : '0'
                   const isOpen    = expanded.has(name)
                   const hasSubs   = (vals.sub_items||[]).length > 0
-                  const isLogged  = loggedCats.has(name)
-                  const isLogOpen = logActualOpen[name]
                   return (<React.Fragment key={name}>
                     <tr style={{ background: ri%2===0?'white':'var(--ivory)',
                       cursor: hasSubs?'pointer':'default' }}
@@ -904,46 +818,6 @@ export default function Tab8Budget() {
                       <td style={{ padding:'10px 10px', textAlign:'right', fontWeight:700,
                         color: parseFloat(pct)>25?'#DC2626':parseFloat(pct)>15?'#D97706':'var(--muted)' }}>
                         {pct}%
-                      </td>
-                    </tr>
-                    {/* Log Actual row */}
-                    <tr key={`${name}-log`} style={{ background: ri%2===0?'#F8FAFF':'#F0F4FF' }}>
-                      <td colSpan={6} style={{ padding:'4px 14px 6px 36px' }}
-                        onClick={e => e.stopPropagation()}>
-                        {isLogged ? (
-                          <span style={{ fontSize:11, color:'#059669', fontWeight:700 }}> Logged</span>
-                        ) : isLogOpen ? (
-                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{ fontSize:11, color:'#374151', fontWeight:600 }}>Actual spent (₹):</span>
-                            <input type="number" min="1"
-                              placeholder="Enter actual amount"
-                              value={logActualVal[name] || ''}
-                              onChange={e => setLogActualVal(p => ({ ...p, [name]: e.target.value }))}
-                              style={{ padding:'4px 8px', borderRadius:6, border:'1px solid #818CF8',
-                                fontSize:12, width:160 }} />
-                            <button
-                              disabled={loggingCat === name}
-                              onClick={() => handleLogActual(name, vals.mid)}
-                              style={{ padding:'4px 12px', borderRadius:6, border:'none',
-                                background:'#4F46E5', color:'#fff', fontWeight:700, fontSize:11,
-                                cursor:'pointer' }}>
-                              {loggingCat === name ? 'Saving...' : 'Submit'}
-                            </button>
-                            <button onClick={() => setLogActualOpen(p => ({ ...p, [name]: false }))}
-                              style={{ padding:'4px 8px', borderRadius:6, border:'1px solid #E5E7EB',
-                                background:'white', fontSize:11, cursor:'pointer', color:'#6B7280' }}>
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={e => { e.stopPropagation(); setLogActualOpen(p => ({ ...p, [name]: true })) }}
-                            style={{ padding:'3px 10px', borderRadius:6, border:'1px solid #818CF8',
-                              background:'white', color:'#4F46E5', fontWeight:600, fontSize:11,
-                              cursor:'pointer' }}>
-                            + Log Actual Cost
-                          </button>
-                        )}
                       </td>
                     </tr>
                     {isOpen && (vals.sub_items||[]).map((sub,si) => (

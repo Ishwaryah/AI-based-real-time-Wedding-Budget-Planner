@@ -8,6 +8,7 @@ from services.budget_engine import calculate_full_budget, run_pso_optimizer
 from models.cost_tables import ARTIST_COSTS, SPECIALTY_COUNTER_COSTS
 from database import get_db
 from ml.rl_agent import get_rl_agent, BUDGET_CATEGORIES
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 router = APIRouter()
@@ -107,9 +108,16 @@ def log_actual_cost(payload: LogActualPayload, db: Session = Depends(get_db)):
     if payload.actual <= 0 or payload.estimated <= 0:
         raise HTTPException(status_code=400, detail="actual and estimated must be > 0")
 
-    # Insert into budget_tracker table
+    # Delete existing record for same session_id and category
+    from models import BudgetTracker
+    db.query(BudgetTracker).filter(
+        BudgetTracker.session_id == payload.session_id,
+        BudgetTracker.category == payload.category
+    ).delete()
+    db.commit()
+
+    # Insert new record
     try:
-        from models import BudgetTracker
         from sqlalchemy import insert
         db.execute(
             insert(BudgetTracker).values(
@@ -144,6 +152,46 @@ def log_actual_cost(payload: LogActualPayload, db: Session = Depends(get_db)):
         "accuracy_improvement": accuracy_improvement,
         "total_samples":        result["total_samples"],
         "message":              message,
+    }
+
+
+@router.get("/tracker-summary")
+def get_tracker_summary(db: Session = Depends(get_db)):
+    """Return latest logged actual per budget category."""
+    from models import BudgetTracker
+    from sqlalchemy import text
+
+    rows = db.execute(text("""
+        SELECT DISTINCT ON (category) category, estimated, actual, difference
+        FROM budget_tracker
+        WHERE session_id = 'admin-panel'
+        ORDER BY category, created_at DESC
+    """)).fetchall()
+
+    summary = []
+    total_estimated = 0.0
+    total_actual = 0.0
+    total_difference = 0.0
+
+    for row in rows:
+        estimated = float(row.estimated or 0.0)
+        actual = float(row.actual or 0.0)
+        difference = float(row.difference or 0.0)
+        summary.append({
+            "category": row.category,
+            "estimated": estimated,
+            "actual": actual,
+            "difference": difference,
+        })
+        total_estimated += estimated
+        total_actual += actual
+        total_difference += difference
+
+    return {
+        "summary": summary,
+        "total_estimated": total_estimated,
+        "total_actual": total_actual,
+        "total_difference": total_difference,
     }
 
 

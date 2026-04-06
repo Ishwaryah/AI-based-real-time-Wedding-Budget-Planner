@@ -548,7 +548,7 @@ function DecorLabelsTab() {
 function BudgetTrackerTab() {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [actualInputs, setActualInputs] = useState({})
+  const [actuals, setActuals] = useState({})
   const [newEntry, setNewEntry] = useState({ category: '', estimated: '', actual: '' })
   const [status, setStatus] = useState(null)
   const [saveState, setSaveState] = useState({})
@@ -574,11 +574,11 @@ function BudgetTrackerTab() {
     try {
       const data = await apiFetchBudget('/budget/tracker-summary') || {}
       setSummary(data)
-      const inputs = {}
+      const actuals = {};
       (data.summary || []).forEach(row => {
-        inputs[row.category] = row.actual != null ? String(row.actual) : ''
+        actuals[row.category] = row.actual != null ? row.actual : 0
       })
-      setActualInputs(inputs)
+      setActuals(actuals)
     } catch (e) {
       setStatus({ error: e.message })
     } finally {
@@ -598,6 +598,7 @@ function BudgetTrackerTab() {
 
     setStatus(null)
     setMessage(null)
+    setLoading(true)
     setSaveState(prev => ({ ...prev, [trimmed]: 'saving' }))
     try {
       const result = (await apiFetchBudget('/budget/log-actual', {
@@ -609,14 +610,20 @@ function BudgetTrackerTab() {
           actual: act,
         }),
       })) || {}
+      
       const improvement = Number(result.accuracy_improvement || 0)
       setMessage(`${trimmed} updated. Accuracy improvement: ${improvement >= 0 ? '+' : ''}${improvement.toFixed(1)}%`)
-      setNewEntry({ category: '', estimated: '', actual: '' })
+      
+      // Reset form
+      setNewEntry({ category: BUDGET_CATEGORIES[0], estimated: '', actual: '' })
+      
+      // Refresh summary
       await loadSummary()
     } catch (e) {
       setStatus({ error: e.message })
     } finally {
       setSaveState(prev => ({ ...prev, [trimmed]: null }))
+      setLoading(false)
     }
   }
 
@@ -654,8 +661,8 @@ function BudgetTrackerTab() {
                   <input
                     type="number"
                     min="0"
-                    value={actualInputs[row.category] ?? ''}
-                    onChange={e => setActualInputs(prev => ({ ...prev, [row.category]: e.target.value }))}
+                    value={actuals[row.category] || 0}
+                    onChange={e => setActuals(prev => ({ ...prev, [row.category]: parseFloat(e.target.value) || 0 }))}
                     style={{ ...inputStyle, width: 120 }}
                   />
                 </td>
@@ -666,7 +673,7 @@ function BudgetTrackerTab() {
                   <Btn
                     small
                     disabled={saveState[row.category] === 'saving'}
-                    onClick={() => submitActual(row.category, row.estimated, actualInputs[row.category] || row.actual)}
+                    onClick={() => submitActual(row.category, row.estimated, actuals[row.category] || row.actual)}
                     color={C.blue}
                   >
                     {saveState[row.category] === 'saving' ? 'Saving…' : 'Save'}
