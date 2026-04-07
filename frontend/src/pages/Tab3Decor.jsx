@@ -40,6 +40,7 @@ function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
   const [imgErr, setImgErr] = useState(false)
   const p = localPredict(item)
   const fallback = '#7C3AED'
+  const defaultImageUrl = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80'
   const cx = COMPLEXITY_COLOR[item.complexity] || '#6b7280'
   const sx = STYLE_COLOR[item.style] || '#6b7280'
   return (
@@ -67,9 +68,11 @@ function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
             style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
           />
         ) : (
-          <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
-            {item.emoji}
-          </div>
+          <img
+            src={defaultImageUrl}
+            alt={item.name || item.function_type || 'Decor inspiration'}
+            style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+          />
         )}
         <div style={{
           position:'absolute', top:10, right:10, width:26, height:26,

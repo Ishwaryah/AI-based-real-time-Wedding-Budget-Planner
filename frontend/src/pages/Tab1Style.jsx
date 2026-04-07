@@ -141,7 +141,6 @@ export default function Tab1Style() {
   const { wedding, update } = useWedding()
   const [newEventName, setNewEventName] = useState('')
   const [newEventEmoji, setNewEventEmoji] = useState(EVENT_EMOJIS[0])
-  const [eventImageErrors, setEventImageErrors] = useState({})
 
   // ── Date handler ─────────────────────────────────────────────────────────────
   const handleDateChange = (e) => {
@@ -293,7 +292,7 @@ export default function Tab1Style() {
         </div>
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
           gap: 10, marginBottom: 16
         }}>
           {allEventOptions.map(opt => {
@@ -301,52 +300,12 @@ export default function Tab1Style() {
             const isUserCustom = opt.isUserCustom
             return (
               <div key={opt.id} style={{ position: 'relative' }}>
-                <div
-                  onClick={() => handleEventToggle(opt.id)}
-                  className={`sel-card${isSel ? ' selected' : ''}`}
-                  style={{
-                    border: isSel ? '2px solid #C9A84C' : '2px solid transparent',
-                    borderRadius: 12,
-                    padding: '18px 10px',
-                    backgroundColor: opt.fallbackColor || '#334155',
-                    backgroundImage: opt.imageUrl && !eventImageErrors[opt.id]
-                      ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`
-                      : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    textAlign: 'center',
-                    userSelect: 'none',
-                    minHeight: 120,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#fff',
-                    boxShadow: isSel ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {opt.imageUrl && !eventImageErrors[opt.id] && (
-                    <img
-                      src={opt.imageUrl}
-                      alt=""
-                      onError={() => setEventImageErrors(prev => ({ ...prev, [opt.id]: true }))}
-                      style={{ display: 'none' }}
-                    />
-                  )}
-                  <div className="check-badge-rose" style={{
-                    position: 'absolute', top: 8, right: 8,
-                    width: 20, height: 20, borderRadius: '50%',
-                    background: '#C9A84C', color: '#111',
-                    fontSize: 11, fontWeight: 800,
-                    alignItems: 'center', justifyContent: 'center',
-                    display: isSel ? 'flex' : 'none',
-                    animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                  }}>✓</div>
-                  <div className="sel-card-icon" style={{ fontSize: 28, display: 'block', marginBottom: 6 }}>{opt.icon}</div>
-                  <div style={{ fontWeight: 700, fontSize: 16, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{opt.label}</div>
-                </div>
+                <SelCard
+                  item={opt}
+                  isSelected={isSel}
+                  onToggle={handleEventToggle}
+                  hasAnySelected={false}
+                />
                 {isUserCustom && (
                   <button
                     onClick={(e) => { e.stopPropagation(); removeCustomEvent(opt.id) }}

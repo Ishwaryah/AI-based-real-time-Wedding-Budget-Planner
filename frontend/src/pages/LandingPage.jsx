@@ -3,31 +3,31 @@ import { motion } from 'framer-motion'
 
 const FEATURES = [
   {
-    icon: '',
+    image: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?auto=format&fit=crop&w=1200&q=80',
     title: 'Set Your Date & Style',
     description: 'Choose your wedding date, type, and cultural preferences. We tailor everything for Hindu, Muslim, Sikh, Christian, Jain, Buddhist & more.',
     large: false
   },
   {
-    icon: '',
+    image: 'https://images.unsplash.com/photo-1469371670807-013ccf25f16a?auto=format&fit=crop&w=1200&q=80',
     title: 'Find the Perfect Venue',
     description: 'Browse curated venues with live pricing for your city and guest count.',
     large: false
   },
   {
-    icon: '',
+    image: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=1200&q=80',
     title: 'AI Decor Suggestions',
     description: 'Get AI-powered decor recommendations with cost estimates.',
     large: false
   },
   {
-    icon: '',
+    image: 'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=1200&q=80',
     title: 'Smart Budget Tracking',
     description: 'Real-time budget breakdown across all categories. Never go over budget again.',
     large: true
   },
   {
-    icon: '',
+    image: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1200&q=80',
     title: 'Artists & Entertainment',
     description: 'Discover performers, DJs, and photographers for your big day.',
     large: false
@@ -198,7 +198,7 @@ const S = {
     padding: '160px 24px 100px',
     minHeight: '100vh',
     justifyContent: 'center',
-    background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1920&q=80')`,
+    background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('/hero-bg.jpg')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },
@@ -308,9 +308,19 @@ const S = {
   cardLarge: {
     gridColumn: 'span 2'
   },
-  featureEmoji: {
-    fontSize: '2.2rem',
-    marginBottom: 16
+  featureImageWrap: {
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 16,
+    background: '#f6f6f6'
+  },
+  featureImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block'
   },
   featureTitle: {
     fontSize: '1.1rem',
@@ -734,7 +744,14 @@ export default function LandingPage({ onEnter }) {
               transition={{ delay: i * 0.1 }}
               whileHover={{ y: -4, boxShadow: '0 8px 40px rgba(0,0,0,0.12)', borderColor: '#fce4ec' }}
             >
-              <div style={S.featureEmoji}>{f.icon}</div>
+              <div style={S.featureImageWrap}>
+                <img
+                  src={f.image}
+                  alt={f.title}
+                  style={S.featureImage}
+                  loading="lazy"
+                />
+              </div>
               <div style={S.featureTitle}>{f.title}</div>
               <div style={S.featureDesc}>{f.description}</div>
             </motion.div>

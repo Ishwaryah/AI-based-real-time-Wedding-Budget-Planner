@@ -34,32 +34,39 @@ function ArtistCard({ artist, isSelected, onToggle, hasAnySelected }) {
       onClick={() => onToggle(artist)}
       className={`sel-card${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
       style={{
-        border: isSelected ? '2px solid #C9A84C' : '2px solid transparent',
+        border: isSelected ? '2px solid #C9A84C' : '2px solid #e5e7eb',
         borderRadius: 12,
         overflow: 'hidden',
-        backgroundColor: fallback,
-        backgroundImage: artist.imageUrl && !imgErr
-          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${artist.imageUrl})`
-          : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: 120,
+        background: '#fff',
+        minHeight: 0,
         boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
         transition: 'all 0.2s ease',
-        color: 'white',
         position: 'relative',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: 'column',
         textAlign: 'center',
-        padding: '16px 14px',
       }}
     >
-      {artist.imageUrl && !imgErr && <img src={artist.imageUrl} alt="" onError={() => setImgErr(true)} style={{ display: 'none' }} />}
-      {!artist.imageUrl || imgErr ? <div className="sel-card-icon" style={{ fontSize: 28, marginBottom: 8 }}>{artist.emoji}</div> : null}
-      <div style={{ textAlign: 'center' }}>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{artist.label}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>
+      <div style={{ width: '100%', height: 110, background: fallback, lineHeight: 0, overflow: 'hidden' }}>
+        {artist.imageUrl && !imgErr ? (
+          <img
+            src={artist.imageUrl}
+            alt=""
+            onError={() => setImgErr(true)}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%', display: 'flex',
+            alignItems: 'center', justifyContent: 'center'
+          }}>
+            <div className="sel-card-icon" style={{ fontSize: 28 }}>{artist.emoji}</div>
+          </div>
+        )}
+      </div>
+      <div style={{ width: '100%', textAlign: 'center', padding: '12px 12px 14px' }}>
+        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#111' }}>{artist.label}</div>
+        <div style={{ fontSize: 12, color: '#4b5563', fontWeight: 700 }}>
           {formatRupees(lo)} – {formatRupees(hi)}
         </div>
       </div>
