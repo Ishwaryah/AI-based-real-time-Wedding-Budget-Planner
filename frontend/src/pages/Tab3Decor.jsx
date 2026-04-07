@@ -634,9 +634,6 @@ export default function Tab3Decor() {
         )}
       </div>
 
-      {/* Decor Inspiration Library */}
-      <DecorLibrarySection />
-
       {/* Sticky Next button */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}

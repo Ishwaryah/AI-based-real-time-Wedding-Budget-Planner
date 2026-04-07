@@ -375,7 +375,7 @@ function AppInner() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {activeTab !== 2 && <ParticleField />}
+      <ParticleField />
       {showWelcome && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 9999, overflowY: 'auto' }}>
           <LandingPage onEnter={(role) => {
