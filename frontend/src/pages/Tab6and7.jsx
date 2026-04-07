@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useWedding, SFX_ITEMS, formatRupees } from '../context/WeddingContext'
 import { MultiImageSelector } from '../components/ImageCard'
@@ -9,6 +9,7 @@ const C = { primary: '#023047', amber: '#ffb703', blue: '#219ebc', light: '#e8f4
 // ─── TAB 6: SUNDRIES ──────────────────────────────────────────────────────────
 export function Tab6Sundries() {
   const { wedding, update } = useWedding()
+  const [basketImageErrors, setBasketImageErrors] = useState({})
   const guests = wedding.total_guests || 0
   const rooms  = wedding.num_rooms || Math.ceil((wedding.outstation_guests || 0) / 2)
 
@@ -80,7 +81,9 @@ export function Tab6Sundries() {
                 textAlign:'center',
                 cursor:'pointer',
                 backgroundColor: opt.fallbackColor,
-                backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`,
+                backgroundImage: !basketImageErrors[opt.id]
+                  ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`
+                  : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 transition:'all 0.2s ease',
@@ -93,6 +96,14 @@ export function Tab6Sundries() {
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
+              {!basketImageErrors[opt.id] && (
+                <img
+                  src={opt.imageUrl}
+                  alt=""
+                  onError={() => setBasketImageErrors(prev => ({ ...prev, [opt.id]: true }))}
+                  style={{ display: 'none' }}
+                />
+              )}
               {selected && (
                 <span style={{
                   position: 'absolute',

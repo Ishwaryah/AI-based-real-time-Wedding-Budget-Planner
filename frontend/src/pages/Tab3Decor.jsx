@@ -159,15 +159,6 @@ function LibraryCard({ item, isLibSel, onToggle }) {
         <div style={{ fontSize:11, color:'var(--muted)' }}>
           {formatRupees(item.predicted_low)} – {formatRupees(item.predicted_high)}
         </div>
-        <div style={{ marginTop:6 }}>
-          <span style={{
-            fontSize:10, padding:'2px 7px', borderRadius:6, fontWeight:700,
-            background: item.method === 'ml' ? '#D1FAE5' : '#FEF3C7',
-            color: item.method === 'ml' ? '#065F46' : '#92400E',
-          }}>
-            {item.method === 'ml' ? ' ML' : ' Rule-based'}
-          </span>
-        </div>
       </div>
       {isLibSel && (
         <div style={{

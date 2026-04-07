@@ -8,7 +8,7 @@ import { scrollToNextSection } from '../utils/scrollToNext'
 const WEDDING_TYPE_OPTIONS = [
   { id: 'Hindu',     icon: '', label: 'Hindu', imageUrl: 'https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#7C3AED' },
   { id: 'Islam',     icon: '', label: 'Islamic', imageUrl: 'https://images.unsplash.com/photo-1591604466107-ec97de577aff?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
-  { id: 'Sikh',      icon: '', label: 'Sikh', imageUrl: 'https://images.unsplash.com/photo-1621873495484-37f2e2f4f0b4?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
+  { id: 'Sikh',      icon: '', label: 'Sikh', imageUrl: 'https://images.unsplash.com/photo-1607197399756-51e3de7a5d96?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
   { id: 'Christian', icon: '', label: 'Christian', imageUrl: 'https://images.unsplash.com/photo-1523438885200-e635ba2c371e?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1E40AF' },
   { id: 'Buddhist',  icon: '', label: 'Buddhist', imageUrl: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#B45309' },
   { id: 'Jain',      icon: '', label: 'Jain', imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#065F46' },
@@ -22,18 +22,18 @@ const BUDGET_STYLE_OPTIONS = [
 ]
 
 const EVENT_OPTIONS = [
-  { id: 'Haldi',                icon: '', label: 'Haldi' },
-  { id: 'Mehendi',              icon: '', label: 'Mehendi' },
-  { id: 'Sangeet',              icon: '', label: 'Sangeet' },
-  { id: 'Wedding Day Ceremony', icon: '', label: 'Ceremony' },
-  { id: 'Reception',            icon: '', label: 'Reception' },
-  { id: 'Engagement',           icon: '', label: 'Engagement' },
-  { id: 'Pre Wedding Cocktail', icon: '', label: 'Cocktail' },
-  { id: 'Tilak',                icon: '', label: 'Tilak',        isCustom: true },
-  { id: 'Grihapravesh',         icon: '', label: 'Grihapravesh', isCustom: true },
+  { id: 'Haldi',                icon: '', label: 'Haldi', imageUrl: 'https://images.unsplash.com/photo-1595407753234-0882f1e77954?w=1200&q=80', fallbackColor: '#B45309' },
+  { id: 'Mehendi',              icon: '', label: 'Mehendi', imageUrl: 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80', fallbackColor: '#166534' },
+  { id: 'Sangeet',              icon: '', label: 'Sangeet', imageUrl: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#1D4ED8' },
+  { id: 'Wedding Day Ceremony', icon: '', label: 'Ceremony', imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1200&q=80', fallbackColor: '#7C2D12' },
+  { id: 'Reception',            icon: '', label: 'Reception', imageUrl: 'https://images.unsplash.com/photo-1529636798458-92182e662485?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#9D174D' },
+  { id: 'Engagement',           icon: '', label: 'Engagement', imageUrl: 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#0F766E' },
+  { id: 'Pre Wedding Cocktail', icon: '', label: 'Cocktail', imageUrl: 'https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#312E81' },
+  { id: 'Tilak',                icon: '', label: 'Tilak', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#92400E' },
+  { id: 'Grihapravesh',         icon: '', label: 'Grihapravesh', isCustom: true, imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80', fallbackColor: '#334155' },
 ]
 
-const EVENT_EMOJIS = ['','','','','','','','','','','','','','','','']
+const EVENT_EMOJIS = ['🎉','🎊','🕯️','🎵','💃','🥂','🌸','🌺','🎭','🪔','🎇','🥁','👑','🌙','⭐','🎆']
 
 const FONT = { fontFamily: "'DM Sans', 'Inter', sans-serif" }
 
@@ -140,7 +140,8 @@ function SectionTitle({ children }) {
 export default function Tab1Style() {
   const { wedding, update } = useWedding()
   const [newEventName, setNewEventName] = useState('')
-  const [newEventEmoji, setNewEventEmoji] = useState('')
+  const [newEventEmoji, setNewEventEmoji] = useState(EVENT_EMOJIS[0])
+  const [eventImageErrors, setEventImageErrors] = useState({})
 
   // ── Date handler ─────────────────────────────────────────────────────────────
   const handleDateChange = (e) => {
@@ -182,13 +183,14 @@ export default function Tab1Style() {
   const addCustomEvent = () => {
     const name = newEventName.trim()
     if (!name) return
+    const emoji = newEventEmoji || EVENT_EMOJIS[0]
     const id = 'custom_' + Date.now()
     const cur = wedding.custom_events || []
     if (cur.find(e => e.label.toLowerCase() === name.toLowerCase())) return
-    update('custom_events', [...cur, { id, label: name, emoji: newEventEmoji }])
+    update('custom_events', [...cur, { id, label: name, emoji }])
     update('events', [...(wedding.events || []), id])
     setNewEventName('')
-    setNewEventEmoji('')
+    setNewEventEmoji(EVENT_EMOJIS[0])
   }
 
   const removeCustomEvent = (id) => {
@@ -200,7 +202,14 @@ export default function Tab1Style() {
     ...EVENT_OPTIONS,
     ...(wedding.custom_events || [])
       .filter(ev => !EVENT_OPTIONS.find(o => o.id === ev.id))
-      .map(ev => ({ id: ev.id, icon: ev.emoji, label: ev.label, isUserCustom: true }))
+      .map(ev => ({
+        id: ev.id,
+        icon: ev.emoji,
+        label: ev.label,
+        imageUrl: 'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80',
+        fallbackColor: '#334155',
+        isUserCustom: true,
+      }))
   ]
 
   const today = new Date().toISOString().split('T')[0]
@@ -296,24 +305,47 @@ export default function Tab1Style() {
                   onClick={() => handleEventToggle(opt.id)}
                   className={`sel-card${isSel ? ' selected' : ''}`}
                   style={{
-                    border: `2px solid ${isSel ? '#D4537E' : '#EBEBEB'}`,
-                    borderRadius: 14, padding: '18px 10px',
-                    background: isSel ? '#FDF2F8' : 'white',
-                    textAlign: 'center', userSelect: 'none',
-                    boxShadow: isSel ? '0 4px 16px rgba(212,83,126,0.12)' : '0 1px 4px rgba(0,0,0,0.04)',
+                    border: isSel ? '2px solid #C9A84C' : '2px solid transparent',
+                    borderRadius: 12,
+                    padding: '18px 10px',
+                    backgroundColor: opt.fallbackColor || '#334155',
+                    backgroundImage: opt.imageUrl && !eventImageErrors[opt.id]
+                      ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${opt.imageUrl})`
+                      : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    textAlign: 'center',
+                    userSelect: 'none',
+                    minHeight: 120,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#fff',
+                    boxShadow: isSel ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
+                    transition: 'all 0.2s ease',
                   }}
                 >
+                  {opt.imageUrl && !eventImageErrors[opt.id] && (
+                    <img
+                      src={opt.imageUrl}
+                      alt=""
+                      onError={() => setEventImageErrors(prev => ({ ...prev, [opt.id]: true }))}
+                      style={{ display: 'none' }}
+                    />
+                  )}
                   <div className="check-badge-rose" style={{
                     position: 'absolute', top: 8, right: 8,
                     width: 20, height: 20, borderRadius: '50%',
-                    background: '#D4537E', color: 'white',
+                    background: '#C9A84C', color: '#111',
                     fontSize: 11, fontWeight: 800,
                     alignItems: 'center', justifyContent: 'center',
                     display: isSel ? 'flex' : 'none',
                     animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
-                  }}></div>
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                  }}>✓</div>
                   <div className="sel-card-icon" style={{ fontSize: 28, display: 'block', marginBottom: 6 }}>{opt.icon}</div>
-                  <div style={{ fontWeight: 700, fontSize: 12, color: isSel ? '#B83A64' : '#111' }}>{opt.label}</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{opt.label}</div>
                 </div>
                 {isUserCustom && (
                   <button
@@ -352,43 +384,49 @@ export default function Tab1Style() {
 
         {/* Add custom event */}
         <div style={{
-          padding: '16px 18px', border: '1.5px dashed #EBEBEB',
-          borderRadius: 12, background: '#ffffff'
+          padding: '18px 20px', border: '1.5px dashed #EBEBEB',
+          borderRadius: 14, background: '#fff',
+          boxShadow: '0 1px 10px rgba(0,0,0,0.05)',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#888', marginBottom: 10 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#111', marginBottom: 10, ...FONT }}>
             + Add your own event
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-              {EVENT_EMOJIS.map((em, index) => (
-                <button key={index} onClick={() => setNewEventEmoji(em)}
-                  style={{
-                    width: 30, height: 30,
-                    border: `1.5px solid ${newEventEmoji === em ? '#D4537E' : '#EBEBEB'}`,
-                    borderRadius: 7, background: newEventEmoji === em ? '#FBE8EF' : 'white',
-                    cursor: 'pointer', fontSize: 15
-                  }}>{em}</button>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#5B5B5B', ...FONT }}>Choose an icon</span>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {EVENT_EMOJIS.map((em, index) => (
+                  <button key={index} onClick={() => setNewEventEmoji(em)}
+                    style={{
+                      width: 30, height: 30,
+                      border: `1.5px solid ${newEventEmoji === em ? '#D4537E' : '#EBEBEB'}`,
+                      borderRadius: 7, background: newEventEmoji === em ? '#FBE8EF' : 'white',
+                      cursor: 'pointer', fontSize: 15
+                    }}>{em}</button>
+                ))}
+              </div>
             </div>
-            <input
-              value={newEventName}
-              onChange={e => setNewEventName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addCustomEvent()}
-              placeholder="e.g. Ring Ceremony, Tilak, Griha Pravesh…"
-              style={{
-                flex: 1, minWidth: 180, padding: '8px 12px',
-                border: '1.5px solid #EBEBEB', borderRadius: 8,
-                fontSize: 13, outline: 'none', background: '#fff', color: '#111', ...FONT
-              }}
-            />
-            <button
-              onClick={addCustomEvent}
-              style={{
-                padding: '8px 18px', borderRadius: 8, background: '#111',
-                color: 'white', border: 'none', fontWeight: 700,
-                fontSize: 12, cursor: 'pointer', ...FONT
-              }}
-            >Add</button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <input
+                value={newEventName}
+                onChange={e => setNewEventName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addCustomEvent()}
+                placeholder="e.g. Ring Ceremony, Tilak, Griha Pravesh…"
+                style={{
+                  flex: 1, minWidth: 180, padding: '10px 14px',
+                  border: '1.5px solid #EBEBEB', borderRadius: 10,
+                  fontSize: 14, outline: 'none', background: '#fff', color: '#111', ...FONT
+                }}
+              />
+              <button
+                onClick={addCustomEvent}
+                style={{
+                  padding: '10px 20px', borderRadius: 10, background: '#111',
+                  color: 'white', border: 'none', fontWeight: 700,
+                  fontSize: 13, cursor: 'pointer', ...FONT
+                }}
+              >Add</button>
+            </div>
           </div>
         </div>
       </Section>
