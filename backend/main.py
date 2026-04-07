@@ -84,7 +84,11 @@ app.include_router(logistics.router,      prefix="/api/logistics", tags=["Logist
 app.include_router(sundries.router,       prefix="/api/sundries",  tags=["Sundries"])
 app.include_router(admin.router,          prefix="/api/admin",     tags=["Admin"])
 
-app.mount("/decor_images", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "..", "decor_dataset", "data", "images")), name="decor")
+# Serve decor images from the dataset.
+# Keep both URL spellings for backwards compatibility.
+_decor_images_dir = os.path.join(os.path.dirname(__file__), "..", "decor_dataset", "data", "images")
+app.mount("/decor-images", StaticFiles(directory=_decor_images_dir), name="decor-images")
+app.mount("/decor_images", StaticFiles(directory=_decor_images_dir), name="decor-images-underscore")
 
 
 @app.get("/")
