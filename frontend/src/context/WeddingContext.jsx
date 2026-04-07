@@ -124,7 +124,7 @@ export const ALL_EVENTS = [
 export const WEDDING_TYPES = [
   { id: "Hindu",     imageUrl: "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&q=80", emoji: "", label: "Hindu Wedding" },
   { id: "Islam",     imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400&q=80", emoji: "",  label: "Islamic Wedding" },
-  { id: "Sikh",      imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80", emoji: "", label: "Sikh Wedding" },
+  { id: "Sikh",      imageUrl: "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&q=80", emoji: "🪯", label: "Sikh Wedding" },
   { id: "Christian", imageUrl: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=400&q=80", emoji: "",  label: "Christian Wedding" },
   { id: "Buddhist",  imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80", emoji: "",  label: "Buddhist Wedding" },
   { id: "Jain",      imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80", emoji: "",  label: "Jain Wedding" },
