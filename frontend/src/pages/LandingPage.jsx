@@ -198,7 +198,7 @@ const S = {
     padding: '160px 24px 100px',
     minHeight: '100vh',
     justifyContent: 'center',
-    background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('/hero-bg.jpg')`,
+    background: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1920&q=80')`,
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },

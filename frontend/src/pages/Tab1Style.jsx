@@ -47,52 +47,52 @@ function SelCard({ item, isSelected, onToggle, hasAnySelected, wide = false }) {
       onClick={() => onToggle(item.id)}
       className={`sel-card${wide ? ' budget-style-card' : ''}${isSelected ? ' selected' : ''}${hasAnySelected && !isSelected ? ' dimmed' : ''}`}
       style={{
-        border: isSelected ? '2px solid #C9A84C' : '2px solid transparent',
+        border: isSelected ? '2px solid #C9A84C' : '2px solid #e5e7eb',
         borderRadius: 12,
-        backgroundColor: cardBg,
-        backgroundImage: !imgErr && item.imageUrl
-          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${item.imageUrl})`
-          : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        padding: wide ? '18px 20px' : '20px 14px',
+        background: '#fff',
+        overflow: 'hidden',
         textAlign: 'center',
         userSelect: 'none',
         display: 'flex',
-        flexDirection: wide ? 'row' : 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 120,
-        gap: wide ? 14 : 8,
+        flexDirection: 'column',
+        minHeight: 0,
         boxShadow: isSelected ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
         transition: 'all 0.2s ease',
-        color: 'white',
         position: 'relative',
       }}
     >
-      {item.imageUrl && !imgErr && (
-        <img src={item.imageUrl} alt="" style={{ display: 'none' }} onError={() => setImgErr(true)} />
-      )}
-      {/* Rose checkmark badge springs in on select */}
-      <div className="check-badge-rose" style={{
-        position: 'absolute', top: 8, right: 8,
-        width: 22, height: 22, borderRadius: '50%',
-        background: '#C9A84C', color: '#111',
-        fontSize: 12, fontWeight: 800,
-        alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
-        display: isSelected ? 'flex' : 'none',
-        animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
-        zIndex: 2
-      }}>✓</div>
-
-      <span className="sel-card-icon card-icon" style={{ fontSize: wide ? 28 : 32 }}>{item.icon}</span>
-      <div>
-        <div className="card-label" style={{ fontWeight: 700, fontSize: 16, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)', ...FONT }}>
+      <div style={{ position: 'relative', overflow: 'hidden', background: cardBg, lineHeight: 0 }}>
+        {!imgErr && item.imageUrl ? (
+          <img
+            src={item.imageUrl}
+            alt=""
+            style={{ width: '100%', height: wide ? 100 : 110, objectFit: 'cover', display: 'block' }}
+            onError={() => setImgErr(true)}
+          />
+        ) : (
+          <div style={{ height: wide ? 100 : 110, background: cardBg }} />
+        )}
+        <div className="check-badge-rose" style={{
+          position: 'absolute', top: 8, right: 8,
+          width: 22, height: 22, borderRadius: '50%',
+          background: '#C9A84C', color: '#111',
+          fontSize: 12, fontWeight: 800,
+          alignItems: 'center', justifyContent: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.35)',
+          display: isSelected ? 'flex' : 'none',
+          animation: isSelected ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none',
+          zIndex: 2
+        }}>✓</div>
+      </div>
+      <div style={{ padding: wide ? '14px 16px 16px' : '12px 12px 14px', ...FONT }}>
+        {item.icon ? (
+          <span className="sel-card-icon card-icon" style={{ fontSize: wide ? 22 : 24, display: 'block', marginBottom: 6 }}>{item.icon}</span>
+        ) : null}
+        <div className="card-label" style={{ fontWeight: 700, fontSize: wide ? 15 : 15, color: '#111' }}>
           {item.label}
         </div>
         {item.desc && (
-          <div className="card-desc" style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, ...FONT }}>
+          <div className="card-desc" style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>
             {item.desc}
           </div>
         )}

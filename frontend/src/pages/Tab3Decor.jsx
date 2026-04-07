@@ -40,58 +40,65 @@ function DecorCard({ item, isSel, onToggle, hasAnySelected }) {
   const [imgErr, setImgErr] = useState(false)
   const p = localPredict(item)
   const fallback = '#7C3AED'
+  const cx = COMPLEXITY_COLOR[item.complexity] || '#6b7280'
+  const sx = STYLE_COLOR[item.style] || '#6b7280'
   return (
     <div
       onClick={() => onToggle(item)}
       className={`sel-card${isSel ? ' selected' : ''}${hasAnySelected && !isSel ? ' dimmed' : ''}`}
       style={{
-        border: isSel ? '2px solid #C9A84C' : '2px solid transparent',
+        border: isSel ? '2px solid #C9A84C' : '2px solid #e5e7eb',
         borderRadius: 12,
         overflow: 'hidden',
-        backgroundColor: fallback,
-        backgroundImage: item.imageUrl && !imgErr
-          ? `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.55)), url(${item.imageUrl})`
-          : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        minHeight: 120,
+        background: '#fff',
         boxShadow: isSel ? '0 0 0 3px rgba(201,168,76,0.3)' : '0 2px 8px rgba(0,0,0,0.08)',
         transition: 'all 0.2s ease',
-        color: '#fff',
         position: 'relative',
-        padding: '12px 14px 14px',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      {item.imageUrl && !imgErr && <img src={item.imageUrl} alt="" onError={() => setImgErr(true)} style={{ display: 'none' }} />}
-      {!item.imageUrl || imgErr ? <div className="sel-card-icon" style={{ fontSize: 32, textAlign: 'center', marginBottom: 6 }}>{item.emoji}</div> : null}
-      <div>
-        <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8, lineHeight: 1.3, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}>{item.name}</div>
+      <div style={{ position: 'relative', background: fallback, lineHeight: 0, overflow: 'hidden' }}>
+        {item.imageUrl && !imgErr ? (
+          <img
+            src={item.imageUrl}
+            alt=""
+            onError={() => setImgErr(true)}
+            style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>
+            {item.emoji}
+          </div>
+        )}
+        <div style={{
+          position:'absolute', top:10, right:10, width:26, height:26,
+          background:'#C9A84C', borderRadius:'50%',
+          alignItems:'center', justifyContent:'center', color:'#111', fontWeight:'bold', fontSize:13,
+          boxShadow:'0 2px 8px rgba(0,0,0,0.35)',
+          display: isSel ? 'flex' : 'none',
+          animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
+        }}>✓</div>
+      </div>
+      <div style={{ padding: '12px 14px 14px' }}>
+        <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 8, lineHeight: 1.3, color: '#111' }}>{item.name}</div>
         <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
           <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background:'rgba(255,255,255,0.22)', color:'#fff' }}>
+            background: cx + '22', color: cx }}>
             {item.complexity}
           </span>
           <span style={{ fontSize:10, padding:'3px 9px', borderRadius:10, fontWeight:700,
-            background:'rgba(255,255,255,0.2)', color:'#fff' }}>
+            background: sx + '22', color: sx }}>
             {item.style}
           </span>
         </div>
-        <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'#fff' }}>
+        <div style={{ fontFamily:'EB Garamond,serif', fontSize:19, fontWeight:700, color:'#023047' }}>
           {formatRupees(p.predicted)}
         </div>
-        <div style={{ fontSize:12, color:'rgba(255,255,255,0.85)', marginTop:2 }}>
+        <div style={{ fontSize:12, color:'#6b7280', marginTop:2 }}>
           {formatRupees(p.low)} – {formatRupees(p.high)}
         </div>
       </div>
-      {/* Rose checkmark badge */}
-      <div style={{
-        position:'absolute', top:10, right:10, width:26, height:26,
-        background:'#C9A84C', borderRadius:'50%',
-        alignItems:'center', justifyContent:'center', color:'#111', fontWeight:'bold', fontSize:13,
-        boxShadow:'0 2px 8px rgba(0,0,0,0.35)',
-        display: isSel ? 'flex' : 'none',
-        animation: isSel ? 'checkSpring 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards' : 'none'
-      }}>✓</div>
     </div>
   )
 }
@@ -136,7 +143,7 @@ function LibraryCard({ item, isLibSel, onToggle }) {
     >
       <img
         src={`${API.replace('/api','')}/decor-images/${item.filename}`}
-        onError={(e) => e.target.src='/placeholder-decor.jpg'}
+        onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80' }}
         style={{width:'100%', height:140, objectFit:'cover', borderRadius:8}}
       />
       <div style={{ padding:'10px 12px 12px' }}>
