@@ -124,7 +124,7 @@ export const ALL_EVENTS = [
 export const WEDDING_TYPES = [
   { id: "Hindu",     imageUrl: "https://images.unsplash.com/photo-1606800052052-a08af7148866?w=400&q=80", emoji: "", label: "Hindu Wedding" },
   { id: "Islam",     imageUrl: "https://images.unsplash.com/photo-1591604466107-ec97de577aff?w=400&q=80", emoji: "",  label: "Islamic Wedding" },
-  { id: "Sikh",      imageUrl: "https://images.unsplash.com/photo-1607197399756-51e3de7a5d96?w=400&q=80", emoji: "", label: "Sikh Wedding" },
+  { id: "Sikh",      imageUrl: "https://images.unsplash.com/photo-1519741497674-611481863552?w=400&q=80", emoji: "", label: "Sikh Wedding" },
   { id: "Christian", imageUrl: "https://images.unsplash.com/photo-1523438885200-e635ba2c371e?w=400&q=80", emoji: "",  label: "Christian Wedding" },
   { id: "Buddhist",  imageUrl: "https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80", emoji: "",  label: "Buddhist Wedding" },
   { id: "Jain",      imageUrl: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=400&q=80", emoji: "",  label: "Jain Wedding" },
@@ -180,7 +180,7 @@ export const SPECIALTY_COUNTERS = [
 
 // Generic artist tiers (unnamed bookings)
 export const ARTIST_TYPES = [
-  { id: "Local DJ",            imageUrl: "https://images.unsplash.com/photo-1571266028243-d220c6a7ce4a?w=400&h=250&fit=crop", emoji: "", label: "Local DJ",              cost: "₹60K–₹2L",    tier: "generic" },
+  { id: "Local DJ",            imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=250&fit=crop", emoji: "", label: "Local DJ",              cost: "₹60K–₹2L",    tier: "generic" },
   { id: "Professional DJ",     imageUrl: "https://images.unsplash.com/photo-1604328698692-f76ea9498e76?w=400&h=250&fit=crop", emoji: "",  label: "Pro DJ",                cost: "₹2.5L–₹6L",   tier: "generic" },
   { id: "Celebrity DJ",        imageUrl: "https://images.unsplash.com/photo-1619983081563-430f63602796?w=400&h=250&fit=crop", emoji: "",  label: "Celebrity DJ",          cost: "₹8L–₹25L",    tier: "named" },
   { id: "Bollywood Singer A",  imageUrl: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=250&fit=crop", emoji: "", label: "Bollywood Singer A",    cost: "₹10L–₹15L",   tier: "named" },
@@ -188,12 +188,12 @@ export const ARTIST_TYPES = [
   { id: "Bollywood Singer C",  imageUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&h=250&fit=crop", emoji: "", label: "Bollywood Singer C",    cost: "₹3L–₹6L",     tier: "named" },
   { id: "Live Band (Local)",   imageUrl: "https://images.unsplash.com/photo-1540039155733-5bb30b53aa14?w=400&h=250&fit=crop", emoji: "", label: "Live Band (Local)",     cost: "₹1.5L–₹4L",   tier: "generic" },
   { id: "Live Band (National)",imageUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&h=250&fit=crop", emoji: "", label: "Live Band (National)",  cost: "₹6L–₹18L",    tier: "generic" },
-  { id: "Folk Artist",         imageUrl: "https://images.unsplash.com/photo-1623952862669-0a3cb0d83c55?w=400&h=250&fit=crop", emoji: "", label: "Folk / Classical Artist",cost: "₹40K–₹1.5L",  tier: "generic" },
+  { id: "Folk Artist",         imageUrl: "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400&h=250&fit=crop", emoji: "", label: "Folk / Classical Artist",cost: "₹40K–₹1.5L",  tier: "generic" },
   { id: "Sufi Singer",         imageUrl: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=400&h=250&fit=crop", emoji: "", label: "Sufi / Ghazal Singer",  cost: "₹80K–₹3L",    tier: "generic" },
   { id: "Myra Entertainment",  imageUrl: "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&h=250&fit=crop", emoji: "", label: "Myra Entertainment",    cost: "₹2.5L–₹7L",   tier: "named" },
   { id: "Choreographer",       imageUrl: "https://images.unsplash.com/photo-1508807526345-15e9b5f4eaff?w=400&h=250&fit=crop", emoji: "", label: "Choreographer",         cost: "₹60K–₹2.5L",  tier: "generic" },
   { id: "Anchor / Emcee",      imageUrl: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=250&fit=crop", emoji: "", label: "Anchor / Emcee",        cost: "₹40K–₹2L",    tier: "generic" },
-  { id: "Stand-up Comedian",   imageUrl: "https://images.unsplash.com/photo-1584802671793-c60c34bed6c5?w=400&h=250&fit=crop", emoji: "", label: "Stand-up Comedian",     cost: "₹1L–₹5L",     tier: "generic" },
+  { id: "Stand-up Comedian",   imageUrl: "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=250&fit=crop", emoji: "", label: "Stand-up Comedian",     cost: "₹1L–₹5L",     tier: "generic" },
   { id: "Nadaswaram Artist",   imageUrl: "https://images.unsplash.com/photo-1563089145-599997674d42?w=400&h=250&fit=crop", emoji: "", label: "Nadaswaram / Shehnai",  cost: "₹25K–₹80K",   tier: "generic" },
   { id: "Fireworks Display",   imageUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=400&h=250&fit=crop", emoji: "", label: "Fireworks Display",     cost: "₹50K–₹3L",    tier: "generic" },
 ]
@@ -217,7 +217,7 @@ export const SFX_ITEMS = [
   { id: "Confetti Cannon", imageUrl: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=400&h=250&fit=crop", emoji: "", label: "Confetti Cannon", cost: "₹10K" },
   { id: "Smoke Machine",   imageUrl: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=400&h=250&fit=crop", emoji: "", label: "Smoke Machine",   cost: "₹8K" },
   { id: "Laser Show",      imageUrl: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&h=250&fit=crop", emoji: "", label: "Laser Show",      cost: "₹30K" },
-  { id: "Flower Cannon",   imageUrl: "https://images.unsplash.com/photo-1490750967868-88df5691cc1e?w=400&h=250&fit=crop", emoji: "", label: "Flower Cannon",   cost: "₹12K" },
+  { id: "Flower Cannon",   imageUrl: "https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=400&h=250&fit=crop", emoji: "", label: "Flower Cannon",   cost: "₹12K" },
 ]
 
 export const BUDGET_TIERS = [
